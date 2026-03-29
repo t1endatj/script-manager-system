@@ -1,6 +1,11 @@
 package scriptmanager.app.entity.asset;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import scriptmanager.app.entity.core.SuKienTiec;
 import scriptmanager.app.entity.user.DoiTac;
 import scriptmanager.app.entity.assignment.PhanCongThietBi;
 
@@ -13,40 +18,57 @@ public class ThietBi {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaTB")
     private int maTB;
 
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenTB", nullable = false, length = 100)
     private String tenTB;
+
+    @Min(0)
+    @Column(name = "SoLuong")
     private int soLuong;
+
+    @Size(max = 50)
+    @Column(name = "TinhTrang", length = 50)
     private String tinhTrang;
 
     //Quan hệ 1-n với PhanCongThietBi
-    @OneToMany(mappedBy = "thietBi")
+    @OneToMany(mappedBy = "thietBi", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PhanCongThietBi> phanCongThietBis = new HashSet<>();
 
     //Quan hệ 1-n với DoiTac
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "MaDT")
+    @JoinColumn(name = "MaDT", nullable = false)
     private DoiTac doiTac;
 
     //Constructor
     public ThietBi() {
     }
 
-    public ThietBi(int maTB, String tenTB, int soLuong, String tinhTrang, Set<PhanCongThietBi> phanCongThietBis) {
-        this.maTB = maTB;
+    public ThietBi(String tenTB, int soLuong, String tinhTrang, DoiTac doiTac) {
         this.tenTB = tenTB;
         this.soLuong = soLuong;
         this.tinhTrang = tinhTrang;
-        this.phanCongThietBis = phanCongThietBis;
+        this.setDoiTac(doiTac);
+    }
+
+    //helper method PhanCongThietBi
+    public void addPhanCongThietBi(PhanCongThietBi pc) {
+        phanCongThietBis.add(pc);
+        pc.setThietBi(this);
+    }
+
+    public void removePhanCongThietBi(PhanCongThietBi pc) {
+        phanCongThietBis.remove(pc);
+        pc.setThietBi(null);
     }
 
     //Getter và setter
     public int getMaTB() {
         return maTB;
-    }
-
-    public void setMaTB(int maTB) {
-        this.maTB = maTB;
     }
 
     public String getTenTB() {
@@ -78,6 +100,23 @@ public class ThietBi {
     }
 
     public void setPhanCongThietBis(Set<PhanCongThietBi> phanCongThietBis) {
-        this.phanCongThietBis = phanCongThietBis;
+        this.phanCongThietBis.clear();
+        if (phanCongThietBis != null) {
+            phanCongThietBis.forEach(this::addPhanCongThietBi);
+        }
+    }
+
+    public DoiTac getDoiTac() {
+        return doiTac;
+    }
+
+    public void setDoiTac(DoiTac doiTac) {
+        if (this.doiTac != null) {
+            this.doiTac.getThietBis().remove(this);
+        }
+        this.doiTac = doiTac;
+        if (doiTac != null) {
+            doiTac.getThietBis().add(this);
+        }
     }
 }

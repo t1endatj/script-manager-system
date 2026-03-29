@@ -15,8 +15,13 @@ import java.util.Objects;
 @Embeddable
 public class SuDungDaoCuId implements Serializable {
 
-    private int maHM;
-    private int maDaoCu;
+    private static final long serialVersionUID = 1L;
+
+    @Column(name = "MaHM")
+    private Integer maHM;
+
+    @Column(name = "MaDaoCu")
+    private Integer maDaoCu;
 
     //Constructor
     public SuDungDaoCuId() {}
@@ -32,11 +37,29 @@ public class SuDungDaoCuId implements Serializable {
         if (this == o) return true;
         if (!(o instanceof SuDungDaoCuId)) return false;
         SuDungDaoCuId that = (SuDungDaoCuId) o;
-        return maHM == that.maHM && maDaoCu == that.maDaoCu;
+        return Objects.equals(maHM, that.maHM) &&
+                Objects.equals(maDaoCu, that.maDaoCu);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(maHM, maDaoCu);
+    }
+
+    //Getter và setter
+    public int getMaHM() {
+        return maHM;
+    }
+
+    public void setMaHM(int maHM) {
+        this.maHM = maHM;
+    }
+
+    public int getMaDaoCu() {
+        return maDaoCu;
+    }
+
+    public void setMaDaoCu(int maDaoCu) {
+        this.maDaoCu = maDaoCu;
     }
 }

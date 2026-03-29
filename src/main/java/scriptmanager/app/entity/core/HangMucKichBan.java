@@ -1,6 +1,9 @@
 package scriptmanager.app.entity.core;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.asset.DanhSachNhac;
 import scriptmanager.app.entity.assignment.PhanCongNhanSu;
 import scriptmanager.app.entity.assignment.PhanCongThietBi;
@@ -17,55 +20,116 @@ public class HangMucKichBan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaHM")
     private int maHM;
 
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenHM", nullable = false, length = 100)
     private String tenHM;
+
+    @Column(name = "TgBatDau")
     private LocalDateTime tgBatDau;
+
+    @Column(name = "TgKetThuc")
     private LocalDateTime tgKetThuc;
+
+    @Size(max = 65535)
+    @Column(name = "NoiDung", columnDefinition = "TEXT")
     private String noiDung;
 
     //Quan hệ 1-n với SuKienTiec
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "MaSK")
+    @JoinColumn(name = "MaSK", nullable = false)
     private SuKienTiec suKienTiec;
 
     //Quan hệ 1-n với SuDungDaoCu
-    @OneToMany(mappedBy = "hangMuc")
+    @OneToMany(mappedBy = "hangMuc", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SuDungDaoCu> suDungDaoCus = new HashSet<>();
 
     //Quan hệ 1-n với SuDungHieuUng
-    @OneToMany(mappedBy = "hangMuc")
+    @OneToMany(mappedBy = "hangMuc", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SuDungHieuUng> suDungHieuUngs = new HashSet<>();
 
     //Quan hệ 1-n với PhanCongNhanSu
-    @OneToMany(mappedBy = "hangMuc")
+    @OneToMany(mappedBy = "hangMuc", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PhanCongNhanSu> phanCongNhanSus = new HashSet<>();
 
     //Quan hệ 1-n với PhanCongThietBi
-    @OneToMany(mappedBy = "hangMuc")
+    @OneToMany(mappedBy = "hangMuc", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PhanCongThietBi> phanCongThietBis = new HashSet<>();
 
     //Quan hệ 1-n với DanhSachNhac
-    @OneToMany(mappedBy = "hangMuc")
+    @OneToMany(mappedBy = "hangMuc", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DanhSachNhac> danhSachNhacs = new HashSet<>();
 
     //Constructor
     public HangMucKichBan() {
     }
 
-    public HangMucKichBan(int maHM, String tenHM, LocalDateTime tgBatDau, LocalDateTime tgKetThuc, String noiDung, SuKienTiec suKienTiec, Set<SuDungDaoCu> suDungDaoCus, Set<SuDungHieuUng> suDungHieuUngs, Set<PhanCongNhanSu> phanCongNhanSus, Set<PhanCongThietBi> phanCongThietBis, Set<DanhSachNhac> danhSachNhacs) {
-        this.maHM = maHM;
+    public HangMucKichBan(String tenHM,SuKienTiec suKienTiec) {
         this.tenHM = tenHM;
-        this.tgBatDau = tgBatDau;
-        this.tgKetThuc = tgKetThuc;
-        this.noiDung = noiDung;
-        this.suKienTiec = suKienTiec;
-        this.suDungDaoCus = suDungDaoCus;
-        this.suDungHieuUngs = suDungHieuUngs;
-        this.phanCongNhanSus = phanCongNhanSus;
-        this.phanCongThietBis = phanCongThietBis;
-        this.danhSachNhacs = danhSachNhacs;
+        this.setSuKienTiec(suKienTiec);
     }
+
+    //Helper method
+
+    //PhanCongNhanSu
+    public void addPhanCongNhanSu(PhanCongNhanSu pc) {
+        phanCongNhanSus.add(pc);
+        pc.setHangMuc(this);
+    }
+
+    public void removePhanCongNhanSu(PhanCongNhanSu pc) {
+            phanCongNhanSus.remove(pc);
+            pc.setHangMuc(null);
+    }
+
+    //PhanCongThietBi
+    public void addPhanCongThietBi(PhanCongThietBi pc) {
+        phanCongThietBis.add(pc);
+        pc.setHangMuc(this);
+    }
+
+    public void removePhanCongThietBi(PhanCongThietBi pc) {
+            phanCongThietBis.remove(pc);
+            pc.setHangMuc(null);
+    }
+
+    //SuDungDaoCu
+    public void addSuDungDaoCu(SuDungDaoCu sd) {
+        suDungDaoCus.add(sd);
+        sd.setHangMuc(this);
+    }
+
+    public void removeSuDungDaoCu(SuDungDaoCu sd) {
+            suDungDaoCus.remove(sd);
+            sd.setHangMuc(null);
+    }
+
+    //SuDungHieuUng
+    public void addSuDungHieuUng(SuDungHieuUng sd) {
+        suDungHieuUngs.add(sd);
+        sd.setHangMuc(this);
+    }
+
+    public void removeSuDungHieuUng(SuDungHieuUng sd) {
+            suDungHieuUngs.remove(sd);
+            sd.setHangMuc(null);
+    }
+
+    //DanhSachNhac
+    public void addDanhSachNhac(DanhSachNhac nhac) {
+        danhSachNhacs.add(nhac);
+        nhac.setHangMuc(this);
+    }
+
+    public void removeDanhSachNhac(DanhSachNhac nhac) {
+            danhSachNhacs.remove(nhac);
+            nhac.setHangMuc(null);
+    }
+
 
     //Getter và Setter
 
@@ -114,7 +178,13 @@ public class HangMucKichBan {
     }
 
     public void setSuKienTiec(SuKienTiec suKienTiec) {
+        if (this.suKienTiec != null) {
+            this.suKienTiec.getHangMucs().remove(this);
+        }
         this.suKienTiec = suKienTiec;
+        if (suKienTiec != null) {
+            suKienTiec.getHangMucs().add(this);
+        }
     }
 
     public Set<SuDungDaoCu> getSuDungDaoCus() {
@@ -122,7 +192,10 @@ public class HangMucKichBan {
     }
 
     public void setSuDungDaoCus(Set<SuDungDaoCu> suDungDaoCus) {
-        this.suDungDaoCus = suDungDaoCus;
+        this.suDungDaoCus.clear();
+        if (suDungDaoCus != null) {
+            suDungDaoCus.forEach(this::addSuDungDaoCu);
+        }
     }
 
     public Set<SuDungHieuUng> getSuDungHieuUngs() {
@@ -130,7 +203,10 @@ public class HangMucKichBan {
     }
 
     public void setSuDungHieuUngs(Set<SuDungHieuUng> suDungHieuUngs) {
-        this.suDungHieuUngs = suDungHieuUngs;
+        this.suDungHieuUngs.clear();
+        if (suDungHieuUngs != null) {
+            suDungHieuUngs.forEach(this::addSuDungHieuUng);
+        }
     }
 
     public Set<PhanCongNhanSu> getPhanCongNhanSus() {
@@ -138,7 +214,10 @@ public class HangMucKichBan {
     }
 
     public void setPhanCongNhanSus(Set<PhanCongNhanSu> phanCongNhanSus) {
-        this.phanCongNhanSus = phanCongNhanSus;
+        this.phanCongNhanSus.clear();
+        if (phanCongNhanSus != null) {
+            phanCongNhanSus.forEach(this::addPhanCongNhanSu);
+        }
     }
 
     public Set<PhanCongThietBi> getPhanCongThietBis() {
@@ -146,7 +225,10 @@ public class HangMucKichBan {
     }
 
     public void setPhanCongThietBis(Set<PhanCongThietBi> phanCongThietBis) {
-        this.phanCongThietBis = phanCongThietBis;
+        this.phanCongThietBis.clear();
+        if (phanCongThietBis != null) {
+            phanCongThietBis.forEach(this::addPhanCongThietBi);
+        }
     }
 
     public Set<DanhSachNhac> getDanhSachNhacs() {
@@ -154,6 +236,9 @@ public class HangMucKichBan {
     }
 
     public void setDanhSachNhacs(Set<DanhSachNhac> danhSachNhacs) {
-        this.danhSachNhacs = danhSachNhacs;
+        this.danhSachNhacs.clear();
+        if (danhSachNhacs != null) {
+            danhSachNhacs.forEach(this::addDanhSachNhac);
+        }
     }
 }

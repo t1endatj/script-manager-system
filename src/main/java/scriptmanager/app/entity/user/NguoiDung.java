@@ -1,6 +1,8 @@
 package scriptmanager.app.entity.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.core.SuKienTiec;
 
 import java.util.HashSet;
@@ -9,29 +11,49 @@ import java.util.Set;
 @Entity
 @Table(name = "NguoiDung")
 public class NguoiDung {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaND")
     private int maND;
 
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "TenDangNhap", nullable = false, unique = true, length = 50)
     private String tenDangNhap;
+
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "MatKhau", nullable = false, length = 100)
     private String matKhau;
+
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "QuyenHan", nullable = false, length = 50)
     private String quyenHan;
 
     //Quan hệ 1-n với SuKienTiec
-    @OneToMany(mappedBy = "nguoiDung")
+    @OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL)
     private Set<SuKienTiec> suKienTiecs = new HashSet<>();
 
     //Constructor
     public NguoiDung() {
     }
 
-    public NguoiDung(int maND, String tenDangNhap, String matKhau, String quyenHan, Set<SuKienTiec> suKienTiecs) {
-        this.maND = maND;
+    public NguoiDung(String tenDangNhap, String matKhau, String quyenHan) {
         this.tenDangNhap = tenDangNhap;
         this.matKhau = matKhau;
         this.quyenHan = quyenHan;
-        this.suKienTiecs = suKienTiecs;
+    }
+
+    //Helper method SuKienTiec
+    public void addSuKienTiec(SuKienTiec skt) {
+        suKienTiecs.add(skt);
+        skt.setNguoiDung(this);
+    }
+
+    public void removeSuKienTiec(SuKienTiec skt) {
+            suKienTiecs.remove(skt);
+            skt.setNguoiDung(null);
     }
 
     //Getter
@@ -57,7 +79,10 @@ public class NguoiDung {
 
     // Setter
     public void setSuKienTiecs(Set<SuKienTiec> suKienTiecs) {
-        this.suKienTiecs = suKienTiecs;
+        this.suKienTiecs.clear();
+        if (suKienTiecs != null) {
+            suKienTiecs.forEach(this::addSuKienTiec);
+        }
     }
 
     public void setQuyenHan(String quyenHan) {

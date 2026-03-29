@@ -1,6 +1,9 @@
 package scriptmanager.app.entity.core;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,27 +12,35 @@ public class LichTongDuyet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaTongDuyet")
     private int maTongDuyet;
 
+    @Column(name = "ThoiGianDuyet")
     private LocalDateTime thoiGianDuyet;
+
+    @Size(max = 65535)
+    @Column(name = "NoiDungDuyet", columnDefinition = "TEXT")
     private String noiDungDuyet;
+
+    @Size(max = 50)
+    @Column(name = "TrangThai", length = 50)
     private String trangThai;
 
     //Quan hệ 1-n với SuKienTiec
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "MaSK")
+    @JoinColumn(name = "MaSK", nullable = false)
     private SuKienTiec suKienTiec;
 
     //Constructor
     public LichTongDuyet() {
     }
 
-    public LichTongDuyet(int maTongDuyet, LocalDateTime thoiGianDuyet, String noiDungDuyet, String trangThai, SuKienTiec suKienTiec) {
-        this.maTongDuyet = maTongDuyet;
+    public LichTongDuyet(LocalDateTime thoiGianDuyet, String noiDungDuyet, String trangThai, SuKienTiec suKienTiec) {
         this.thoiGianDuyet = thoiGianDuyet;
         this.noiDungDuyet = noiDungDuyet;
         this.trangThai = trangThai;
-        this.suKienTiec = suKienTiec;
+        this.setSuKienTiec(suKienTiec);
     }
 
     //Getter và setter
@@ -70,6 +81,12 @@ public class LichTongDuyet {
     }
 
     public void setSuKienTiec(SuKienTiec suKienTiec) {
+        if (this.suKienTiec != null) {
+            this.suKienTiec.getLichTongDuyets().remove(this);
+        }
         this.suKienTiec = suKienTiec;
+        if (suKienTiec != null) {
+            suKienTiec.getLichTongDuyets().add(this);
+        }
     }
 }

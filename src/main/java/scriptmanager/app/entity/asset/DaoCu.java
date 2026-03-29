@@ -1,6 +1,10 @@
 package scriptmanager.app.entity.asset;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import scriptmanager.app.entity.assignment.PhanCongThietBi;
 import scriptmanager.app.entity.assignment.SuDungDaoCu;
 import java.util.HashSet;
 import java.util.Set;
@@ -11,36 +15,51 @@ public class DaoCu {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaDaoCu")
     private int maDaoCu;
 
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenDaoCu", nullable = false, length = 100)
     private String tenDaoCu;
+
+    @Min(0)
+    @Column(name = "SoLuong", columnDefinition = "INT DEFAULT 0")
     private int soLuong;
+
+    @Size(max = 50)
+    @Column(name = "TrangThai", length = 50)
     private String trangThai;
 
     //Quan hệ 1-n với SuDungDaoCu
-    @OneToMany(mappedBy = "daoCu")
+    @OneToMany(mappedBy = "daoCu", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SuDungDaoCu> suDungDaoCus = new HashSet<>();
 
     //Constructor
     public DaoCu() {
     }
 
-    public DaoCu(int maDaoCu, String tenDaoCu, int soLuong, String trangThai, Set<SuDungDaoCu> suDungDaoCus) {
-        this.maDaoCu = maDaoCu;
+    public DaoCu(String tenDaoCu, int soLuong, String trangThai) {
         this.tenDaoCu = tenDaoCu;
         this.soLuong = soLuong;
         this.trangThai = trangThai;
-        this.suDungDaoCus = suDungDaoCus;
+    }
+
+    //helper method SuDungDaoCu
+    public void addSuDungDaoCu(SuDungDaoCu sd) {
+        suDungDaoCus.add(sd);
+        sd.setDaoCu(this);
+    }
+
+    public void removeSuDungDaoCu(SuDungDaoCu sd) {
+        suDungDaoCus.remove(sd);
+        sd.setDaoCu(null);
     }
 
     //Getter và setter
 
     public int getMaDaoCu() {
         return maDaoCu;
-    }
-
-    public void setMaDaoCu(int maDaoCu) {
-        this.maDaoCu = maDaoCu;
     }
 
     public String getTenDaoCu() {
@@ -72,6 +91,9 @@ public class DaoCu {
     }
 
     public void setSuDungDaoCus(Set<SuDungDaoCu> suDungDaoCus) {
-        this.suDungDaoCus = suDungDaoCus;
+        this.suDungDaoCus.clear();
+        if (suDungDaoCus != null) {
+            suDungDaoCus.forEach(this::addSuDungDaoCu);
+        }
     }
 }

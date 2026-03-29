@@ -6,47 +6,47 @@ INSERT INTO NguoiDung (TenDangNhap, MatKhau, QuyenHan) VALUES
 ('thuydev', '123456', 'NhanVien'),
 ('linhtran', '123456', 'NhanVien');
 
--- 2. SuKienTiec
+-- 2. DoiTac
+INSERT INTO DoiTac (TenDonVi, LinhVuc, SDT) VALUES
+('Công ty Âm Thanh Ánh Sáng', 'Thiết bị', '0901111111'),
+('Shop Hoa Tươi Hạnh Phúc', 'Trang trí', '0902222222');
+
+-- 3. SuKienTiec
 INSERT INTO SuKienTiec (TenSuKien, ThoiGianToChuc, DiaDiem, MaND) VALUES
 ('Tiệc cưới Anh Tuấn', '2026-05-10 18:00:00', 'Nhà hàng Riverside', 1),
 ('Sinh nhật bé Na', '2026-04-20 17:00:00', 'Quận 7', 2);
 
--- 3. HangMucKichBan
+-- 4. HangMucKichBan
 INSERT INTO HangMucKichBan (TenHM, TgBatDau, TgKetThuc, NoiDung, MaSK) VALUES
 ('Đón khách', '2026-05-10 17:30:00', '2026-05-10 18:00:00', 'Khách vào sảnh', 1),
 ('Khai tiệc', '2026-05-10 18:00:00', '2026-05-10 18:30:00', 'MC giới thiệu', 1),
 ('Cắt bánh', '2026-05-10 19:00:00', '2026-05-10 19:30:00', 'Nghi thức chính', 1),
 ('Mở quà', '2026-04-20 18:00:00', '2026-04-20 18:30:00', 'Bé nhận quà', 2);
 
--- 4. DaoCu
+-- 5. DaoCu
 INSERT INTO DaoCu (TenDaoCu, SoLuong, TrangThai) VALUES
 ('Bàn tiệc', 20, 'Tốt'),
 ('Ghế', 200, 'Tốt'),
 ('Bánh cưới', 1, 'Chuẩn bị'),
 ('Hoa trang trí', 50, 'Tốt');
 
--- 5. HieuUng
+-- 6. HieuUng
 INSERT INTO HieuUng (TenHU) VALUES
 ('Pháo giấy'),
 ('Khói sân khấu'),
 ('Đèn LED');
 
--- 6. ThietBi
-INSERT INTO ThietBi (TenTB, SoLuong, TinhTrang) VALUES
-('Loa', 4, 'Tốt'),
-('Micro', 6, 'Tốt'),
-('Đèn sân khấu', 10, 'Tốt');
+-- 7. ThietBi (ĐÃ FIX MaDT)
+INSERT INTO ThietBi (TenTB, SoLuong, TinhTrang, MaDT) VALUES
+('Loa', 4, 'Tốt', 1),
+('Micro', 6, 'Tốt', 1),
+('Đèn sân khấu', 10, 'Tốt', 1);
 
--- 7. NhanSu
+-- 8. NhanSu
 INSERT INTO NhanSu (TenNS, SDT, VaiTro) VALUES
 ('Nguyễn Văn A', '0901234567', 'MC'),
 ('Trần Thị B', '0912345678', 'Phục vụ'),
 ('Lê Văn C', '0923456789', 'Kỹ thuật');
-
--- 8. DoiTac
-INSERT INTO DoiTac (TenDonVi, LinhVuc, SDT) VALUES
-('Công ty Âm Thanh Ánh Sáng', 'Thiết bị', '0901111111'),
-('Shop Hoa Tươi Hạnh Phúc', 'Trang trí', '0902222222');
 
 -- 9. SuDungDaoCu
 INSERT INTO SuDungDaoCu (MaHM, MaDaoCu, SoLuongSuDung) VALUES

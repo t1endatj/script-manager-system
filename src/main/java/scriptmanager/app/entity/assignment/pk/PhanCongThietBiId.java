@@ -15,8 +15,13 @@ import java.util.Objects;
 @Embeddable
 public class PhanCongThietBiId implements Serializable {
 
-    private int maHM;
-    private int maTB;
+    private static final long serialVersionUID = 1L;
+
+    @Column(name = "MaHM")
+    private Integer maHM;
+
+    @Column(name = "MaTB")
+    private Integer maTB;
 
     //Constructor
     public PhanCongThietBiId() {}
@@ -32,11 +37,29 @@ public class PhanCongThietBiId implements Serializable {
         if (this == o) return true;
         if (!(o instanceof PhanCongThietBiId)) return false;
         PhanCongThietBiId that = (PhanCongThietBiId) o;
-        return maHM == that.maHM && maTB == that.maTB;
+        return Objects.equals(maHM, that.maHM) &&
+                Objects.equals(maTB, that.maTB);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(maHM, maTB);
+    }
+
+    //Getter và setter
+    public int getMaHM() {
+        return maHM;
+    }
+
+    public void setMaHM(int maHM) {
+        this.maHM = maHM;
+    }
+
+    public int getMaTB() {
+        return maTB;
+    }
+
+    public void setMaTB(int maTB) {
+        this.maTB = maTB;
     }
 }

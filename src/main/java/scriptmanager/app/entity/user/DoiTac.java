@@ -1,7 +1,10 @@
 package scriptmanager.app.entity.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.asset.ThietBi;
+import scriptmanager.app.entity.core.SuKienTiec;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -12,23 +15,45 @@ public class DoiTac {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaDT")
     private int maDT;
 
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenDonVi", nullable = false, length = 100)
     private String tenDonVi;
+
+    @Size(max = 100)
+    @Column(name = "LinhVuc", length = 100)
     private String linhVuc;
+
+    @Size(max = 15)
+    @Column(name = "SDT", length = 15)
     private String sdt;
 
     // Quan hệ 1 - N với ThietBi
-    @OneToMany(mappedBy = "doiTac")
+    @OneToMany(mappedBy = "doiTac", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ThietBi> thietBis = new HashSet<>();
 
     //Constructor
-    public DoiTac(int maDT, String tenDonVi, String linhVuc, String sdt, Set<ThietBi> thietBis) {
-        this.maDT = maDT;
+    public DoiTac() {
+    }
+
+    public DoiTac(String tenDonVi, String linhVuc, String sdt) {
         this.tenDonVi = tenDonVi;
         this.linhVuc = linhVuc;
         this.sdt = sdt;
-        this.thietBis = thietBis;
+    }
+
+    //helper method ThietBi
+    public void addThietBi(ThietBi tb) {
+        thietBis.add(tb);
+        tb.setDoiTac(this);
+    }
+
+    public void removeThietBi(ThietBi tb) {
+            thietBis.remove(tb);
+            tb.setDoiTac(null);
     }
 
     //Getter và setter
@@ -69,6 +94,9 @@ public class DoiTac {
     }
 
     public void setThietBis(Set<ThietBi> thietBis) {
-        this.thietBis = thietBis;
+        this.thietBis.clear();
+        if (thietBis != null) {
+            thietBis.forEach(this::addThietBi);
+        }
     }
 }

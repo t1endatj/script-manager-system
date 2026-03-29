@@ -1,6 +1,7 @@
 package scriptmanager.app.entity.assignment;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import scriptmanager.app.entity.asset.HieuUng;
 import scriptmanager.app.entity.assignment.pk.SuDungHieuUngId;
 import scriptmanager.app.entity.core.HangMucKichBan;
@@ -11,21 +12,25 @@ import java.time.LocalDateTime;
 @Table(name = "SuDungHieuUng")
 public class SuDungHieuUng {
 
+    @NotNull
     @EmbeddedId
     private SuDungHieuUngId id;
 
+    @Column(name = "ThoiDiemKichHoat", nullable = false)
     private LocalDateTime thoiDiemKichHoat;
 
     //Quan hệ 1-n với HangMucKichBan
+    @NotNull
     @ManyToOne
     @MapsId("maHM")
-    @JoinColumn(name = "MaHM")
+    @JoinColumn(name = "MaHM", nullable = false)
     private HangMucKichBan hangMuc;
 
     //Quan hệ 1-n với HieuUng
+    @NotNull
     @ManyToOne
     @MapsId("maHU")
-    @JoinColumn(name = "MaHU")
+    @JoinColumn(name = "MaHU", nullable = false)
     private HieuUng hieuUng;
 
     //Constructor
@@ -62,6 +67,10 @@ public class SuDungHieuUng {
 
     public void setHangMuc(HangMucKichBan hangMuc) {
         this.hangMuc = hangMuc;
+        if (this.id == null) {
+            this.id = new SuDungHieuUngId();
+        }
+        this.id.setMaHM(hangMuc != null ? hangMuc.getMaHM() : 0);
     }
 
     public HieuUng getHieuUng() {
@@ -70,5 +79,9 @@ public class SuDungHieuUng {
 
     public void setHieuUng(HieuUng hieuUng) {
         this.hieuUng = hieuUng;
+        if (this.id == null) {
+            this.id = new SuDungHieuUngId();
+        }
+        this.id.setMaHU(hieuUng != null ? hieuUng.getMaHU() : 0);
     }
 }

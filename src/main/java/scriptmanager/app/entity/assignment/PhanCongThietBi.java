@@ -1,6 +1,8 @@
 package scriptmanager.app.entity.assignment;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import scriptmanager.app.entity.asset.ThietBi;
 import scriptmanager.app.entity.assignment.pk.PhanCongThietBiId;
 import scriptmanager.app.entity.core.HangMucKichBan;
@@ -9,21 +11,24 @@ import scriptmanager.app.entity.core.HangMucKichBan;
 @Table(name = "PhanCongThietBi")
 public class PhanCongThietBi {
 
+    @NotNull
     @EmbeddedId
     private PhanCongThietBiId id;
 
+    @Min(1)
+    @Column(name = "SoLuongSuDung", nullable = false)
     private int soLuongSuDung;
 
     //Quan he 1-n với HangMucKichBan
     @ManyToOne
     @MapsId("maHM")
-    @JoinColumn(name = "MaHM")
+    @JoinColumn(name = "MaHM", nullable = false)
     private HangMucKichBan hangMuc;
 
     //Quan hệ 1-n với ThietBi
     @ManyToOne
     @MapsId("maTB")
-    @JoinColumn(name = "MaTB")
+    @JoinColumn(name = "MaTB", nullable = false)
     private ThietBi thietBi;
 
     //Constructor
@@ -60,6 +65,10 @@ public class PhanCongThietBi {
 
     public void setHangMuc(HangMucKichBan hangMuc) {
         this.hangMuc = hangMuc;
+        if (this.id == null) {
+            this.id = new PhanCongThietBiId();
+        }
+        this.id.setMaHM(hangMuc != null ? hangMuc.getMaHM() : 0);
     }
 
     public ThietBi getThietBi() {
@@ -68,5 +77,9 @@ public class PhanCongThietBi {
 
     public void setThietBi(ThietBi thietBi) {
         this.thietBi = thietBi;
+        if (this.id == null) {
+            this.id = new PhanCongThietBiId();
+        }
+        this.id.setMaTB(thietBi != null ? thietBi.getMaTB() : 0);
     }
 }

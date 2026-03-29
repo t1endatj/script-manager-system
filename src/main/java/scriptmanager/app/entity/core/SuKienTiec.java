@@ -1,6 +1,9 @@
 package scriptmanager.app.entity.core;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.user.NguoiDung;
 
 import java.time.LocalDateTime;
@@ -14,26 +17,33 @@ public class SuKienTiec {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaSK")
     private int maSK;
 
-    @Column(nullable = false, length = 100)
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenSuKien", nullable = false, length = 100)
     private String tenSuKien;
 
+    @Column(name = "ThoiGianToChuc")
     private LocalDateTime thoiGianToChuc;
 
+    @Size(max = 255)
+    @Column(name = "DiaDiem", length = 255)
     private String diaDiem;
 
     //Quan hệ với NguoiDung (N-1)
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "MaND", nullable = false)
     private NguoiDung nguoiDung;
 
     //Quan hệ với HangMucKichBan (1-N)
-    @OneToMany(mappedBy = "suKienTiec", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "suKienTiec", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<HangMucKichBan> hangMucs = new HashSet<>();
 
     //Quan hệ với LichTongDuyet (1-N)
-    @OneToMany(mappedBy = "suKienTiec", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "suKienTiec", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LichTongDuyet> lichTongDuyets = new HashSet<>();
 
     //Constructor
@@ -45,6 +55,28 @@ public class SuKienTiec {
         this.thoiGianToChuc = thoiGianToChuc;
         this.diaDiem = diaDiem;
         this.nguoiDung = nguoiDung;
+    }
+
+    //Helper method HangMucKichBan
+    public void addHangMuc(HangMucKichBan hm) {
+        hangMucs.add(hm);
+        hm.setSuKienTiec(this);
+    }
+
+    public void removeHangMuc(HangMucKichBan hm) {
+            hangMucs.remove(hm);
+            hm.setSuKienTiec(null);
+    }
+
+    //Helper method LichTongDuyet
+    public void addLichTongDuyet(LichTongDuyet ltd) {
+        lichTongDuyets.add(ltd);
+        ltd.setSuKienTiec(this);
+    }
+
+    public void removeLichTongDuyet(LichTongDuyet ltd) {
+            lichTongDuyets.remove(ltd);
+            ltd.setSuKienTiec(null);
     }
 
     //Getter & Setter
@@ -97,10 +129,18 @@ public class SuKienTiec {
     }
 
     public void setHangMucs(Set<HangMucKichBan> hangMucs) {
-        this.hangMucs = hangMucs;
+        this.hangMucs.clear();
+        if (hangMucs != null) {
+            hangMucs.forEach(this::addHangMuc);
+        }
     }
 
     public void setLichTongDuyets(Set<LichTongDuyet> lichTongDuyets) {
-        this.lichTongDuyets = lichTongDuyets;
+        this.lichTongDuyets.clear();
+        if (lichTongDuyets != null) {
+            lichTongDuyets.forEach(this::addLichTongDuyet);
+        }
     }
+
+
 }

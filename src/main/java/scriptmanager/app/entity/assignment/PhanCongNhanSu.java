@@ -1,6 +1,9 @@
 package scriptmanager.app.entity.assignment;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.assignment.pk.PhanCongNhanSuId;
 import scriptmanager.app.entity.core.HangMucKichBan;
 import scriptmanager.app.entity.user.NhanSu;
@@ -9,29 +12,31 @@ import scriptmanager.app.entity.user.NhanSu;
 @Table(name = "PhanCongNhanSu")
 public class PhanCongNhanSu {
 
+    @NotBlank
     @EmbeddedId
     private PhanCongNhanSuId id;
 
+    @Size(max = 255)
+    @Column(name = "NhiemVu", length = 255)
     private String nhiemVu;
 
     //Quan hệ 1-n với HangMucKichBan
     @ManyToOne
     @MapsId("maHM")
-    @JoinColumn(name = "MaHM")
+    @JoinColumn(name = "MaHM", nullable = false)
     private HangMucKichBan hangMuc;
 
     //Quan hệ 1-n với NhanSu
     @ManyToOne
     @MapsId("maNS")
-    @JoinColumn(name = "MaNS")
+    @JoinColumn(name = "MaNS", nullable = false)
     private NhanSu nhanSu;
 
     //Constructor
     public PhanCongNhanSu() {
     }
 
-    public PhanCongNhanSu(PhanCongNhanSuId id, String nhiemVu, HangMucKichBan hangMuc, NhanSu nhanSu) {
-        this.id = id;
+    public PhanCongNhanSu(String nhiemVu, HangMucKichBan hangMuc, NhanSu nhanSu) {
         this.nhiemVu = nhiemVu;
         this.hangMuc = hangMuc;
         this.nhanSu = nhanSu;
@@ -40,10 +45,6 @@ public class PhanCongNhanSu {
     //Getter và setter
     public PhanCongNhanSuId getId() {
         return id;
-    }
-
-    public void setId(PhanCongNhanSuId id) {
-        this.id = id;
     }
 
     public String getNhiemVu() {
@@ -59,7 +60,15 @@ public class PhanCongNhanSu {
     }
 
     public void setHangMuc(HangMucKichBan hangMuc) {
+        if (this.hangMuc != null) {
+            this.hangMuc.getPhanCongNhanSus().remove(this);
+        }
         this.hangMuc = hangMuc;
+        if (hangMuc != null) {
+            hangMuc.getPhanCongNhanSus().add(this);
+            if (this.id == null) this.id = new PhanCongNhanSuId();
+            this.id.setMaHM(hangMuc.getMaHM());
+        }
     }
 
     public NhanSu getNhanSu() {
@@ -67,6 +76,14 @@ public class PhanCongNhanSu {
     }
 
     public void setNhanSu(NhanSu nhanSu) {
+        if (this.nhanSu != null) {
+            this.nhanSu.getPhanCongNhanSus().remove(this);
+        }
         this.nhanSu = nhanSu;
+        if (nhanSu != null) {
+            nhanSu.getPhanCongNhanSus().add(this);
+            if (this.id == null) this.id = new PhanCongNhanSuId();
+            this.id.setMaNS(nhanSu.getMaNS());
+        }
     }
 }

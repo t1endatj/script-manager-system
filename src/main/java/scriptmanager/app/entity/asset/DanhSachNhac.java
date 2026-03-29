@@ -1,6 +1,10 @@
 package scriptmanager.app.entity.asset;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import scriptmanager.app.entity.core.HangMucKichBan;
 
 @Entity
@@ -9,38 +13,47 @@ public class DanhSachNhac {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MaBaiHat")
     private int maBaiHat;
 
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "TenBaiHat", nullable = false, length = 100)
     private String tenBaiHat;
+
+    @Size(max = 100)
+    @Column(name = "CaSi", length = 100)
     private String caSi;
+
+    @Min(0)
+    @Column(name = "ThoiLuong")
     private int thoiLuong;
+
+    @Size(max = 255)
+    @Column(name = "FileNhac", length = 255)
     private String fileNhac;
 
     //Quan hệ 1-n với HangMucKichBan
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "MaHM")
+    @JoinColumn(name = "MaHM", nullable = false)
     private HangMucKichBan hangMuc;
 
     //Constructor
     public DanhSachNhac() {
     }
 
-    public DanhSachNhac(int maBaiHat, String tenBaiHat, String caSi, int thoiLuong, String fileNhac, HangMucKichBan hangMuc) {
-        this.maBaiHat = maBaiHat;
+    public DanhSachNhac(String tenBaiHat, String caSi, int thoiLuong, String fileNhac, HangMucKichBan hangMuc) {
         this.tenBaiHat = tenBaiHat;
         this.caSi = caSi;
         this.thoiLuong = thoiLuong;
         this.fileNhac = fileNhac;
-        this.hangMuc = hangMuc;
+        this.setHangMuc(hangMuc);
     }
 
     //Getter và setter
     public int getMaBaiHat() {
         return maBaiHat;
-    }
-
-    public void setMaBaiHat(int maBaiHat) {
-        this.maBaiHat = maBaiHat;
     }
 
     public String getTenBaiHat() {
@@ -80,6 +93,12 @@ public class DanhSachNhac {
     }
 
     public void setHangMuc(HangMucKichBan hangMuc) {
+        if (this.hangMuc != null) {
+            this.hangMuc.getDanhSachNhacs().remove(this);
+        }
         this.hangMuc = hangMuc;
+        if (hangMuc != null) {
+            hangMuc.getDanhSachNhacs().add(this);
+        }
     }
 }

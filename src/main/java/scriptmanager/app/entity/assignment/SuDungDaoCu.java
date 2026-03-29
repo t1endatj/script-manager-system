@@ -1,6 +1,8 @@
 package scriptmanager.app.entity.assignment;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import scriptmanager.app.entity.asset.DaoCu;
 import scriptmanager.app.entity.assignment.pk.SuDungDaoCuId;
 import scriptmanager.app.entity.core.HangMucKichBan;
@@ -9,21 +11,26 @@ import scriptmanager.app.entity.core.HangMucKichBan;
 @Table(name = "SuDungDaoCu")
 public class SuDungDaoCu {
 
+    @NotNull
     @EmbeddedId
     private SuDungDaoCuId id;
 
+    @Min(1)
+    @Column(name = "SoLuongSuDung", nullable = false)
     private int soLuongSuDung;
 
     //Quan hệ 1-n với HangMucKichBan
+    @NotNull
     @ManyToOne
     @MapsId("maHM")
-    @JoinColumn(name = "MaHM")
+    @JoinColumn(name = "MaHM", nullable = false)
     private HangMucKichBan hangMuc;
 
     //Quan hệ 1-n với DaoCu
+    @NotNull
     @ManyToOne
     @MapsId("maDaoCu")
-    @JoinColumn(name = "MaDaoCu")
+    @JoinColumn(name = "MaDaoCu", nullable = false)
     private DaoCu daoCu;
 
     //Constructor
@@ -60,6 +67,10 @@ public class SuDungDaoCu {
 
     public void setHangMuc(HangMucKichBan hangMuc) {
         this.hangMuc = hangMuc;
+        if (this.id == null) {
+            this.id = new SuDungDaoCuId();
+        }
+        this.id.setMaHM(hangMuc != null ? hangMuc.getMaHM() : 0);
     }
 
     public DaoCu getDaoCu() {
@@ -68,5 +79,9 @@ public class SuDungDaoCu {
 
     public void setDaoCu(DaoCu daoCu) {
         this.daoCu = daoCu;
+        if (this.id == null) {
+            this.id = new SuDungDaoCuId();
+        }
+        this.id.setMaDaoCu(daoCu != null ? daoCu.getMaDaoCu() : 0);
     }
 }
