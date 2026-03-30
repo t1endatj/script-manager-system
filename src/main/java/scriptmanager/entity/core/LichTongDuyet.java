@@ -1,4 +1,4 @@
-package scriptmanager.app.entity.core;
+package scriptmanager.entity.core;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

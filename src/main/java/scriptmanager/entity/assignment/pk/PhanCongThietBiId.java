@@ -1,4 +1,4 @@
-package scriptmanager.app.entity.assignment.pk;
+package scriptmanager.entity.assignment.pk;
 
 import jakarta.persistence.*;
 import java.io.Serializable;

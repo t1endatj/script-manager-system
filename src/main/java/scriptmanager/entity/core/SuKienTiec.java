@@ -1,10 +1,10 @@
-package scriptmanager.app.entity.core;
+package scriptmanager.entity.core;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.user.NguoiDung;
+import scriptmanager.entity.user.NguoiDung;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;

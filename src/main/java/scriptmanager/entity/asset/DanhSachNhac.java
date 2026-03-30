@@ -1,11 +1,11 @@
-package scriptmanager.app.entity.asset;
+package scriptmanager.entity.asset;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.core.HangMucKichBan;
+import scriptmanager.entity.core.HangMucKichBan;
 
 @Entity
 @Table(name = "DanhSachNhac")

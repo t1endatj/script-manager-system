@@ -1,9 +1,9 @@
-package scriptmanager.app.entity.asset;
+package scriptmanager.entity.asset;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.assignment.SuDungHieuUng;
+import scriptmanager.entity.assignment.SuDungHieuUng;
 
 import java.util.HashSet;
 import java.util.Set;

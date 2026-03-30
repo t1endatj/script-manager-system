@@ -1,11 +1,11 @@
-package scriptmanager.app.entity.assignment;
+package scriptmanager.entity.assignment;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import scriptmanager.app.entity.asset.ThietBi;
-import scriptmanager.app.entity.assignment.pk.PhanCongThietBiId;
-import scriptmanager.app.entity.core.HangMucKichBan;
+import scriptmanager.entity.asset.ThietBi;
+import scriptmanager.entity.assignment.pk.PhanCongThietBiId;
+import scriptmanager.entity.core.HangMucKichBan;
 
 @Entity
 @Table(name = "PhanCongThietBi")

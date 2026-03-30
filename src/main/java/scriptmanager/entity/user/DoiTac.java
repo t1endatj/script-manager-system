@@ -1,10 +1,10 @@
-package scriptmanager.app.entity.user;
+package scriptmanager.entity.user;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.asset.ThietBi;
-import scriptmanager.app.entity.core.SuKienTiec;
+import scriptmanager.entity.asset.ThietBi;
+import scriptmanager.entity.core.SuKienTiec;
 
 import java.util.Set;
 import java.util.HashSet;

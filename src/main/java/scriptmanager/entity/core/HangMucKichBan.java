@@ -1,14 +1,14 @@
-package scriptmanager.app.entity.core;
+package scriptmanager.entity.core;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.asset.DanhSachNhac;
-import scriptmanager.app.entity.assignment.PhanCongNhanSu;
-import scriptmanager.app.entity.assignment.PhanCongThietBi;
-import scriptmanager.app.entity.assignment.SuDungDaoCu;
-import scriptmanager.app.entity.assignment.SuDungHieuUng;
+import scriptmanager.entity.asset.DanhSachNhac;
+import scriptmanager.entity.assignment.PhanCongNhanSu;
+import scriptmanager.entity.assignment.PhanCongThietBi;
+import scriptmanager.entity.assignment.SuDungDaoCu;
+import scriptmanager.entity.assignment.SuDungHieuUng;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
