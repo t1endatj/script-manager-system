@@ -1,10 +1,10 @@
-package scriptmanager.app.entity.assignment;
+package scriptmanager.entity.assignment;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import scriptmanager.app.entity.asset.HieuUng;
-import scriptmanager.app.entity.assignment.pk.SuDungHieuUngId;
-import scriptmanager.app.entity.core.HangMucKichBan;
+import scriptmanager.entity.asset.HieuUng;
+import scriptmanager.entity.assignment.pk.SuDungHieuUngId;
+import scriptmanager.entity.core.HangMucKichBan;
 
 import java.time.LocalDateTime;
 

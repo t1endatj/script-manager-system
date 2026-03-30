@@ -1,13 +1,13 @@
-package scriptmanager.app.entity.asset;
+package scriptmanager.entity.asset;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.core.SuKienTiec;
-import scriptmanager.app.entity.user.DoiTac;
-import scriptmanager.app.entity.assignment.PhanCongThietBi;
+import scriptmanager.entity.core.SuKienTiec;
+import scriptmanager.entity.user.DoiTac;
+import scriptmanager.entity.assignment.PhanCongThietBi;
 
 import java.util.HashSet;
 import java.util.Set;

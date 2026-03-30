@@ -1,12 +1,12 @@
-package scriptmanager.app.entity.assignment;
+package scriptmanager.entity.assignment;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import scriptmanager.app.entity.assignment.pk.PhanCongNhanSuId;
-import scriptmanager.app.entity.core.HangMucKichBan;
-import scriptmanager.app.entity.user.NhanSu;
+import scriptmanager.entity.assignment.pk.PhanCongNhanSuId;
+import scriptmanager.entity.core.HangMucKichBan;
+import scriptmanager.entity.user.NhanSu;
 
 @Entity
 @Table(name = "PhanCongNhanSu")
