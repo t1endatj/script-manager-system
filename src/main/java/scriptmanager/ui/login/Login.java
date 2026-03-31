@@ -1,5 +1,7 @@
 package scriptmanager.ui.login;
 
+import formdev.flatlaf.FlatClientProperties;
+import net.miginfoswing.MigLayout;
 import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;
 import scriptmanager.ui.main.MainFrame;
