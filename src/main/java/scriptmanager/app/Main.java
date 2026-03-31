@@ -1,8 +1,8 @@
 package scriptmanager.app;
 
-import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.fonts.roboto.FlatRobotoFont;
-import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import formdev.flatlaf.FlatLaf;
+import formdev.flatlaf.fonts.roboto.FlatRobotoFont;
+import formdev.flatlaf.themes.FlatMacDarkLaf;
 import scriptmanager.ui.main.MainFrame;
 
 import javax.swing.*;

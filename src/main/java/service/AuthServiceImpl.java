@@ -1,7 +1,7 @@
-package com.scriptmanager.service;
+package scriptmanager.service;
 
-import com.scriptmanager.dao.NguoiDungDao;
-import com.scriptmanager.dao.NguoiDungDaoImpl;
+import scriptmanager.dao.NguoiDungDao;
+import scriptmanager.dao.NguoiDungDaoImpl;
 import scriptmanager.entity.user.NguoiDung;
 
 public class AuthServiceImpl implements AuthService {

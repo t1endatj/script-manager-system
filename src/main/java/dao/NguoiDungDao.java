@@ -1,4 +1,4 @@
-package com.scriptmanager.dao;
+package scriptmanager.dao;
 
 import scriptmanager.entity.user.NguoiDung;
 

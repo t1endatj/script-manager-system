@@ -1,6 +1,6 @@
-package com.scriptmanager.dao;
+package scriptmanager.dao;
 
-import com.scriptmanager.config.HibernateUtil;
+import scriptmanager.config.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 

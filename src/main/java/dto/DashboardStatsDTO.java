@@ -1,4 +1,4 @@
-package com.scriptmanager.dto;
+package scriptmanager.dto;
 
 public class DashboardStatsDTO {
     private long suKienSapToi;

@@ -1,7 +1,7 @@
-package com.scriptmanager.dao;
+package scriptmanager.dao;
 
-import com.scriptmanager.config.HibernateUtil;
-import com.scriptmanager.dto.DashboardStatsDTO;
+import scriptmanager.config.HibernateUtil;
+import scriptmanager.dto.DashboardStatsDTO;
 import org.hibernate.Session;
 
 public class DashboardDao {

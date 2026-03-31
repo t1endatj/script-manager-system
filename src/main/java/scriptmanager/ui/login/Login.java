@@ -1,7 +1,7 @@
 package scriptmanager.ui.login;
 
-import com.formdev.flatlaf.FlatClientProperties;
-import net.miginfocom.swing.MigLayout;
+import formdev.flatlaf.FlatClientProperties;
+import net.miginfoswing.MigLayout;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;

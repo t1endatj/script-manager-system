@@ -1,4 +1,4 @@
-package com.scriptmanager.service;
+package scriptmanager.service;
 
 import scriptmanager.entity.user.NguoiDung;
 

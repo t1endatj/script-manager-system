@@ -1,7 +1,7 @@
-package com.scriptmanager.service;
+package scriptmanager.service;
 
-import com.scriptmanager.dao.DashboardDao;
-import com.scriptmanager.dto.DashboardStatsDTO;
+import scriptmanager.dao.DashboardDao;
+import scriptmanager.dto.DashboardStatsDTO;
 
 public class DashboardService {
     private final DashboardDao dashboardDao;
