@@ -2,6 +2,9 @@ package scriptmanager.ui.login;
 
 import formdev.flatlaf.FlatClientProperties;
 import net.miginfoswing.MigLayout;
+import com.formdev.flatlaf.FlatClientProperties;
+import net.miginfocom.swing.MigLayout;
+import scriptmanager.ui.main.MainFrame;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -12,12 +15,15 @@ import java.util.Objects;
 
 public class Login extends JPanel {
 
+    private final MainFrame mainFrame;
+
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JCheckBox chRememberMe;
     private JButton cmdLogin;
 
-    public Login() {
+    public Login(MainFrame mainFrame) {
+        this.mainFrame = mainFrame;
         init();
     }
 
@@ -141,6 +147,7 @@ public class Login extends JPanel {
         lbPassword.setForeground(new Color(31, 41, 55));
 
         cmdLogin.addActionListener(e -> handleLogin());
+        txtPassword.addActionListener(e -> handleLogin());
 
         formPanel.add(lbTitle, "gapy 0 4");
         formPanel.add(description, "gapy 0 16");
@@ -223,7 +230,6 @@ public class Login extends JPanel {
 
             boolean selected = c instanceof AbstractButton && ((AbstractButton) c).isSelected();
 
-            // giu 1 mau co dinh, khong doi sang trang khi click
             g2.setColor(new Color(107, 114, 128));
             g2.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
@@ -234,7 +240,6 @@ public class Login extends JPanel {
             g2.drawArc(cx - 7, cy - 5, 14, 10, 180, 180);
             g2.fillOval(cx - 2, cy - 2, 4, 4);
 
-            // dang an mat khau thi ve gach cheo
             if (!selected) {
                 g2.drawLine(x + 3, y + 13, x + 13, y + 3);
             }
@@ -259,6 +264,14 @@ public class Login extends JPanel {
             return;
         }
 
-        JOptionPane.showMessageDialog(this, "Đăng nhập thành công (demo)");
+
+        if ("admin".equals(username) && "1".equals(password)) {
+            mainFrame.showDashboard();
+            return;
+        }
+
+        JOptionPane.showMessageDialog(this, "Sai tên đăng nhập hoặc mật khẩu");
+        txtPassword.setText("");
+        txtPassword.requestFocus();
     }
 }
