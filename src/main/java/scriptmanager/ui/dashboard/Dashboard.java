@@ -76,6 +76,15 @@ public class Dashboard extends JPanel {
         date.setFont(new Font("Segoe UI", Font.BOLD, 13));
         date.setForeground(new Color(224, 228, 242));
 
+        JButton userManager = new JButton("QL Người Dùng");
+        userManager.putClientProperty(FlatClientProperties.STYLE,
+                "arc:12;" +
+                "background:#5F6684;" +
+                "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        userManager.addActionListener(e -> mainFrame.showUserManager());
+
         JButton logout = new JButton("Đăng xuất");
         logout.putClientProperty(FlatClientProperties.STYLE,
                 "arc:12;" +
@@ -86,7 +95,13 @@ public class Dashboard extends JPanel {
         logout.addActionListener(e -> mainFrame.showLogin());
 
         right.add(date, "align right");
-        right.add(logout, "w 110!,h 34!,gapy 10 0,align right");
+        
+        JPanel btnPanel = new JPanel(new MigLayout("insets 0, gap 8"));
+        btnPanel.setOpaque(false);
+        btnPanel.add(userManager, "h 34!");
+        btnPanel.add(logout, "w 110!,h 34!");
+        
+        right.add(btnPanel, "gapy 10 0,align right");
 
         panel.add(left, "growx");
         panel.add(right, "align right");

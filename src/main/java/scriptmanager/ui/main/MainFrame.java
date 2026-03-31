@@ -2,6 +2,7 @@ package scriptmanager.ui.main;
 
 import scriptmanager.ui.dashboard.Dashboard;
 import scriptmanager.ui.login.Login;
+import scriptmanager.ui.user.NguoiDungPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,5 +34,9 @@ public class MainFrame extends JFrame {
         repaint();
     }
 
-
+    public void showUserManager() {
+        setContentPane(new NguoiDungPanel(this));
+        revalidate();
+        repaint();
+    }
 }
