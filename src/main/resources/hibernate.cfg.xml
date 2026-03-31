@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="connection.url">jdbc:mysql://localhost:3306/ScriptCoordinationDB?useSSL=false&amp;serverTimezone=UTC</property>
+        <property name="connection.username">root</property>
+        <property name="connection.password">YOUR_PASSWORD</property>
+
+        <property name="connection.pool_size">10</property>
+        <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+
+        <property name="show_sql">true</property>
+        <property name="format_sql">true</property>
+        <property name="hbm2ddl.auto">update</property>
+
+        <mapping class="scriptmanager.entity.user.NguoiDung"/>
+        <mapping class="scriptmanager.entity.user.DoiTac"/>
+        <mapping class="scriptmanager.entity.user.NhanSu"/>
+        <mapping class="scriptmanager.entity.asset.ThietBi"/>
+        <mapping class="scriptmanager.entity.asset.DaoCu"/>
+        <mapping class="scriptmanager.entity.asset.HieuUng"/>
+        <mapping class="scriptmanager.entity.asset.DanhSachNhac"/>
+        <mapping class="scriptmanager.entity.core.SuKienTiec"/>
+        <mapping class="scriptmanager.entity.core.HangMucKichBan"/>
+        <mapping class="scriptmanager.entity.core.LichTongDuyet"/>
+        <mapping class="scriptmanager.entity.assignment.PhanCongNhanSu"/>
+        <mapping class="scriptmanager.entity.assignment.PhanCongThietBi"/>
+        <mapping class="scriptmanager.entity.assignment.SuDungDaoCu"/>
+        <mapping class="scriptmanager.entity.assignment.SuDungHieuUng"/>
+        
+    </session-factory>
+</hibernate-configuration>
