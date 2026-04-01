@@ -76,6 +76,24 @@ public class Dashboard extends JPanel {
         date.setFont(new Font("Segoe UI", Font.BOLD, 13));
         date.setForeground(new Color(224, 228, 242));
 
+        JButton hmManager = new JButton("QL Kịch Bản");
+        hmManager.putClientProperty(FlatClientProperties.STYLE,
+                "arc:12;" +
+                "background:#5F6684;" +
+                "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        hmManager.addActionListener(e -> mainFrame.showHangMucManager());
+
+        JButton eventManager = new JButton("QL Sự Kiện");
+        eventManager.putClientProperty(FlatClientProperties.STYLE,
+                "arc:12;" +
+                "background:#5F6684;" +
+                "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        eventManager.addActionListener(e -> mainFrame.showSuKienManager());
+
         JButton userManager = new JButton("QL Người Dùng");
         userManager.putClientProperty(FlatClientProperties.STYLE,
                 "arc:12;" +
@@ -98,6 +116,8 @@ public class Dashboard extends JPanel {
         
         JPanel btnPanel = new JPanel(new MigLayout("insets 0, gap 8"));
         btnPanel.setOpaque(false);
+        btnPanel.add(hmManager, "h 34!");
+        btnPanel.add(eventManager, "h 34!");
         btnPanel.add(userManager, "h 34!");
         btnPanel.add(logout, "w 110!,h 34!");
         

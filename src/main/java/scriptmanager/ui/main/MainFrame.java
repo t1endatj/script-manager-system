@@ -1,7 +1,9 @@
 package scriptmanager.ui.main;
 
 import scriptmanager.ui.dashboard.Dashboard;
+import scriptmanager.ui.hangmuc.HangMucKichBanPanel;
 import scriptmanager.ui.login.Login;
+import scriptmanager.ui.sukien.SuKienTiecPanel;
 import scriptmanager.ui.user.NguoiDungPanel;
 
 import javax.swing.*;
@@ -36,6 +38,18 @@ public class MainFrame extends JFrame {
 
     public void showUserManager() {
         setContentPane(new NguoiDungPanel(this));
+        revalidate();
+        repaint();
+    }
+
+    public void showSuKienManager() {
+        setContentPane(new SuKienTiecPanel(this));
+        revalidate();
+        repaint();
+    }
+
+    public void showHangMucManager() {
+        setContentPane(new HangMucKichBanPanel(this));
         revalidate();
         repaint();
     }

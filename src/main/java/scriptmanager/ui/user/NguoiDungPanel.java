@@ -126,11 +126,18 @@ public class NguoiDungPanel extends JPanel {
 
         cbQuyenHan = new JComboBox<>(new String[]{"ADMIN", "MANAGER", "USER"});
 
-        panel.add(new JLabel("Tên đăng nhập:"));
+        JLabel lblUser = new JLabel("Tên đăng nhập:");
+        lblUser.setForeground(Color.BLACK);
+        JLabel lblPass = new JLabel("Mật khẩu:");
+        lblPass.setForeground(Color.BLACK);
+        JLabel lblRole = new JLabel("Quyền hạn:");
+        lblRole.setForeground(Color.BLACK);
+
+        panel.add(lblUser);
         panel.add(txtTenDangNhap, "growx, h 34!");
-        panel.add(new JLabel("Mật khẩu:"));
+        panel.add(lblPass);
         panel.add(txtMatKhau, "growx, h 34!");
-        panel.add(new JLabel("Quyền hạn:"));
+        panel.add(lblRole);
         panel.add(cbQuyenHan, "growx, h 34!");
 
         JButton btnSave = new JButton("Lưu Mới (Thêm)");
