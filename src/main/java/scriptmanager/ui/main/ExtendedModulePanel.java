@@ -41,6 +41,7 @@ public class ExtendedModulePanel extends JPanel {
     private final SuDungDaoCuService suDungDaoCuService = new SuDungDaoCuService();
     private final HangMucKichBanService hangMucService = new HangMucKichBanServiceImpl();
     private final SuKienTiecService suKienService = new SuKienTiecServiceImpl();
+    private final PhanCongNhanSuService phanCongNhanSuService = new PhanCongNhanSuService();
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -59,7 +60,7 @@ public class ExtendedModulePanel extends JPanel {
                 "arc:18;" +
                         "border:1,1,1,1,#D1D5DB");
 
-        JLabel title = new JLabel("Tài nguyên");
+        JLabel title = new JLabel("Phân phối tài nguyên");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(TEXT_DARK);
 
@@ -83,6 +84,7 @@ public class ExtendedModulePanel extends JPanel {
                         "selectedForeground:#111111;");
         tabs.addTab("Đối tác", createDoiTacTab());
         tabs.addTab("Nhân sự", createNhanSuTab());
+        tabs.addTab("Phân công nhân sự", createPhanCongNhanSuTheoSuKienTab());
         tabs.addTab("Thiết bị", createThietBiTab());
         tabs.addTab("Đạo cụ", createDaoCuTab());
         tabs.addTab("Hiệu ứng", createHieuUngTab());
@@ -100,6 +102,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField ten = new JTextField();
         JTextField linhVuc = new JTextField();
         JTextField sdt = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -134,6 +137,29 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn đối tác để cập nhật.");
+                return;
+            }
+            try {
+                DoiTac item = doiTacService.findById(selectedId[0]);
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy đối tác.");
+                    return;
+                }
+                item.setTenDonVi(ten.getText().trim());
+                item.setLinhVuc(linhVuc.getText().trim());
+                item.setSdt(sdt.getText().trim());
+                doiTacService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật đối tác thất bại: " + ex.getMessage());
+            }
+        });
+
         JButton reset = new JButton("Làm mới");
         reset.putClientProperty(FlatClientProperties.STYLE,
                 "arc:10;" +
@@ -142,6 +168,7 @@ public class ExtendedModulePanel extends JPanel {
                         "focusWidth:0;" +
                         "borderWidth:0");
         reset.addActionListener(e -> {
+            selectedId[0] = -1;
             ten.setText("");
             linhVuc.setText("");
             sdt.setText("");
@@ -149,7 +176,19 @@ public class ExtendedModulePanel extends JPanel {
             ten.requestFocusInWindow();
         });
 
-        return wrapCrud(table, load, new String[]{"Tên đơn vị", "Lĩnh vực", "SĐT"}, new JComponent[]{ten, linhVuc, sdt}, add, delete, reset);
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                    linhVuc.setText(String.valueOf(model.getValueAt(row, 2)));
+                    sdt.setText(String.valueOf(model.getValueAt(row, 3)));
+                }
+            }
+        });
+
+        return wrapCrud(table, load, new String[]{"Tên đơn vị", "Lĩnh vực", "SĐT"}, new JComponent[]{ten, linhVuc, sdt}, add, delete, update, reset);
     }
 
     private JComponent createNhanSuTab() {
@@ -158,6 +197,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField ten = new JTextField();
         JTextField sdt = new JTextField();
         JTextField vaiTro = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -187,7 +227,99 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên nhân sự", "SĐT", "Vai trò"}, new JComponent[]{ten, sdt, vaiTro}, add, delete);
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân sự để cập nhật.");
+                return;
+            }
+            try {
+                NhanSu item = nhanSuService.findById(selectedId[0]);
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy nhân sự.");
+                    return;
+                }
+                item.setTenNS(ten.getText().trim());
+                item.setSdt(sdt.getText().trim());
+                item.setVaiTro(vaiTro.getText().trim());
+                nhanSuService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật nhân sự thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                    sdt.setText(String.valueOf(model.getValueAt(row, 2)));
+                    vaiTro.setText(String.valueOf(model.getValueAt(row, 3)));
+                }
+            }
+        });
+
+        return wrapCrud(table, load, new String[]{"Tên nhân sự", "SĐT", "Vai trò"}, new JComponent[]{ten, sdt, vaiTro}, add, delete, update);
+    }
+
+    private JComponent createPhanCongNhanSuTheoSuKienTab() {
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"Mã SK", "Sự kiện", "Mã HM", "Hạng mục", "Mã NS", "Nhân sự", "Nhiệm vụ"}, 0);
+        JTable table = new JTable(model);
+        JTextField maSK = new JTextField();
+        JTextField maNS = new JTextField();
+        JTextField nhiemVu = new JTextField();
+
+        Runnable load = () -> {
+            model.setRowCount(0);
+            for (java.util.Map<String, Object> item : phanCongNhanSuService.findAllView()) {
+                model.addRow(new Object[]{
+                        item.get("maSK"),
+                        item.get("tenSuKien"),
+                        item.get("maHM"),
+                        item.get("tenHangMuc"),
+                        item.get("maNS"),
+                        item.get("tenNhanSu"),
+                        item.get("nhiemVu")
+                });
+            }
+        };
+
+        JButton assign = new JButton("Phân công theo sự kiện");
+        styleUpdateButton(assign);
+        assign.addActionListener(e -> {
+            try {
+                int eventId = Integer.parseInt(maSK.getText().trim());
+                int staffId = Integer.parseInt(maNS.getText().trim());
+                phanCongNhanSuService.assignNhanSuToEvent(eventId, staffId, nhiemVu.getText());
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Phân công nhân sự thất bại: " + ex.getMessage());
+            }
+        });
+
+        JButton delete = new JButton("Xóa dòng chọn");
+        styleDeleteButton(delete);
+        delete.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row >= 0) {
+                try {
+                    int hangMucId = (int) model.getValueAt(row, 2);
+                    int staffId = (int) model.getValueAt(row, 4);
+                    phanCongNhanSuService.deleteByHangMucAndNhanSu(hangMucId, staffId);
+                    load.run();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Xóa phân công thất bại: " + ex.getMessage());
+                }
+            }
+        });
+
+        return wrapCrud(table, load,
+                new String[]{"Mã sự kiện", "Mã nhân sự", "Nhiệm vụ"},
+                new JComponent[]{maSK, maNS, nhiemVu}, assign, delete);
     }
 
     private JComponent createThietBiTab() {
@@ -197,6 +329,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField soLuong = new JTextField();
         JTextField tinhTrang = new JTextField();
         JTextField maDT = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -233,9 +366,47 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn thiết bị để cập nhật.");
+                return;
+            }
+            try {
+                ThietBi item = thietBiService.findById(selectedId[0]);
+                DoiTac doiTac = doiTacService.findById(Integer.parseInt(maDT.getText().trim()));
+                if (item == null || doiTac == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy thiết bị hoặc đối tác.");
+                    return;
+                }
+                item.setTenTB(ten.getText().trim());
+                item.setSoLuong(Integer.parseInt(soLuong.getText().trim()));
+                item.setTinhTrang(tinhTrang.getText().trim());
+                item.setDoiTac(doiTac);
+                thietBiService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật thiết bị thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                    soLuong.setText(String.valueOf(model.getValueAt(row, 2)));
+                    tinhTrang.setText(String.valueOf(model.getValueAt(row, 3)));
+                    maDT.setText(String.valueOf(model.getValueAt(row, 4)));
+                }
+            }
+        });
+
         return wrapCrud(table, load,
                 new String[]{"Tên thiết bị", "Số lượng", "Tình trạng", "Mã đối tác"},
-                new JComponent[]{ten, soLuong, tinhTrang, maDT}, add, delete);
+                new JComponent[]{ten, soLuong, tinhTrang, maDT}, add, delete, update);
     }
 
     private JComponent createDaoCuTab() {
@@ -244,6 +415,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField ten = new JTextField();
         JTextField soLuong = new JTextField();
         JTextField trangThai = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -273,15 +445,51 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn đạo cụ để cập nhật.");
+                return;
+            }
+            try {
+                DaoCu item = daoCuService.findById(selectedId[0]);
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy đạo cụ.");
+                    return;
+                }
+                item.setTenDaoCu(ten.getText().trim());
+                item.setSoLuong(Integer.parseInt(soLuong.getText().trim()));
+                item.setTrangThai(trangThai.getText().trim());
+                daoCuService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật đạo cụ thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                    soLuong.setText(String.valueOf(model.getValueAt(row, 2)));
+                    trangThai.setText(String.valueOf(model.getValueAt(row, 3)));
+                }
+            }
+        });
+
         return wrapCrud(table, load,
                 new String[]{"Tên đạo cụ", "Số lượng", "Trạng thái"},
-                new JComponent[]{ten, soLuong, trangThai}, add, delete);
+                new JComponent[]{ten, soLuong, trangThai}, add, delete, update);
     }
 
     private JComponent createHieuUngTab() {
         DefaultTableModel model = new DefaultTableModel(new String[]{"Mã hiệu ứng", "Tên hiệu ứng"}, 0);
         JTable table = new JTable(model);
         JTextField ten = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -311,7 +519,38 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên hiệu ứng"}, new JComponent[]{ten}, add, delete);
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn hiệu ứng để cập nhật.");
+                return;
+            }
+            try {
+                HieuUng item = hieuUngService.findById(selectedId[0]);
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy hiệu ứng.");
+                    return;
+                }
+                item.setTenHU(ten.getText().trim());
+                hieuUngService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật hiệu ứng thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                }
+            }
+        });
+
+        return wrapCrud(table, load, new String[]{"Tên hiệu ứng"}, new JComponent[]{ten}, add, delete, update);
     }
 
     private JComponent createDanhSachNhacTab() {
@@ -322,6 +561,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField thoiLuong = new JTextField();
         JTextField fileNhac = new JTextField();
         JTextField maHM = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -364,9 +604,49 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn bài hát để cập nhật.");
+                return;
+            }
+            try {
+                DanhSachNhac item = danhSachNhacService.findById(selectedId[0]);
+                HangMucKichBan hm = hangMucService.findById(Integer.parseInt(maHM.getText().trim()));
+                if (item == null || hm == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát hoặc hạng mục.");
+                    return;
+                }
+                item.setTenBaiHat(ten.getText().trim());
+                item.setCaSi(caSi.getText().trim());
+                item.setThoiLuong(Integer.parseInt(thoiLuong.getText().trim()));
+                item.setFileNhac(fileNhac.getText().trim());
+                item.setHangMuc(hm);
+                danhSachNhacService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật bài hát thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    ten.setText(String.valueOf(model.getValueAt(row, 1)));
+                    caSi.setText(String.valueOf(model.getValueAt(row, 2)));
+                    thoiLuong.setText(String.valueOf(model.getValueAt(row, 3)));
+                    fileNhac.setText(String.valueOf(model.getValueAt(row, 4)));
+                    maHM.setText(String.valueOf(model.getValueAt(row, 5)));
+                }
+            }
+        });
+
         return wrapCrud(table, load,
                 new String[]{"Tên bài hát", "Ca sĩ", "Thời lượng", "File nhạc", "Mã hạng mục"},
-                new JComponent[]{ten, caSi, thoiLuong, fileNhac, maHM}, add, delete);
+                new JComponent[]{ten, caSi, thoiLuong, fileNhac, maHM}, add, delete, update);
     }
 
     private JComponent createLichTongDuyetTab() {
@@ -376,6 +656,7 @@ public class ExtendedModulePanel extends JPanel {
         JTextField noiDung = new JTextField();
         JTextField trangThai = new JTextField("Chưa duyệt");
         JTextField maSK = new JTextField();
+        final int[] selectedId = {-1};
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -417,9 +698,47 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton update = new JButton("Cập nhật dòng chọn");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn lịch tổng duyệt để cập nhật.");
+                return;
+            }
+            try {
+                LichTongDuyet item = lichTongDuyetService.findById(selectedId[0]);
+                SuKienTiec sk = suKienService.findById(Integer.parseInt(maSK.getText().trim()));
+                if (item == null || sk == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy lịch tổng duyệt hoặc sự kiện.");
+                    return;
+                }
+                item.setThoiGianDuyet(LocalDateTime.parse(thoiGian.getText().trim(), DATE_TIME_FORMATTER));
+                item.setNoiDungDuyet(noiDung.getText().trim());
+                item.setTrangThai(trangThai.getText().trim());
+                item.setSuKienTiec(sk);
+                lichTongDuyetService.update(item);
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật lịch tổng duyệt thất bại: " + ex.getMessage());
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    selectedId[0] = (int) model.getValueAt(row, 0);
+                    thoiGian.setText(String.valueOf(model.getValueAt(row, 1)).replace('T', ' '));
+                    noiDung.setText(String.valueOf(model.getValueAt(row, 2)));
+                    trangThai.setText(String.valueOf(model.getValueAt(row, 3)));
+                    maSK.setText(String.valueOf(model.getValueAt(row, 4)));
+                }
+            }
+        });
+
         return wrapCrud(table, load,
                 new String[]{"Thời gian (yyyy-MM-dd HH:mm)", "Nội dung duyệt", "Trạng thái", "Mã sự kiện"},
-                new JComponent[]{thoiGian, noiDung, trangThai, maSK}, add, delete);
+                new JComponent[]{thoiGian, noiDung, trangThai, maSK}, add, delete, update);
     }
 
     private JComponent createSuDungDaoCuTab() {
@@ -491,7 +810,7 @@ public class ExtendedModulePanel extends JPanel {
             JButton add,
             JButton delete
     ) {
-        return wrapCrud(table, load, labels, fields, add, delete, null);
+        return wrapCrud(table, load, labels, fields, add, delete, new JButton[0]);
     }
 
     private JComponent wrapCrud(
@@ -501,7 +820,7 @@ public class ExtendedModulePanel extends JPanel {
             JComponent[] fields,
             JButton add,
             JButton delete,
-            JButton extra
+            JButton... extras
     ) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(BG_SOFT);
@@ -532,8 +851,10 @@ public class ExtendedModulePanel extends JPanel {
         buttons.setBackground(CARD_BG);
         buttons.add(add);
         buttons.add(delete);
-        if (extra != null) {
-            buttons.add(extra);
+        for (JButton extra : extras) {
+            if (extra != null) {
+                buttons.add(extra);
+            }
         }
         buttons.add(refresh);
 
@@ -589,5 +910,4 @@ public class ExtendedModulePanel extends JPanel {
                         "borderWidth:0");
     }
 }
-
 

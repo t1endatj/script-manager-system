@@ -1,6 +1,7 @@
 package scriptmanager.dao;
 
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import scriptmanager.config.HibernateUtil;
 import scriptmanager.entity.core.HangMucKichBan;
 
@@ -19,6 +20,41 @@ public class HangMucKichBanDaoImpl extends GenericDaoImpl<HangMucKichBan, Intege
                             HangMucKichBan.class)
                     .setParameter("maND", maNguoiDung)
                     .list();
+        }
+    }
+
+    @Override
+    public void deleteByIdWithDependencies(int maHM) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            // Explicit deletes help when real DB schema is missing ON DELETE CASCADE.
+            session.createMutationQuery("DELETE FROM DanhSachNhac n WHERE n.hangMuc.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+            session.createMutationQuery("DELETE FROM SuDungDaoCu s WHERE s.hangMuc.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+            session.createMutationQuery("DELETE FROM SuDungHieuUng s WHERE s.hangMuc.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+            session.createMutationQuery("DELETE FROM PhanCongThietBi p WHERE p.hangMuc.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+            session.createMutationQuery("DELETE FROM PhanCongNhanSu p WHERE p.hangMuc.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+            session.createMutationQuery("DELETE FROM HangMucKichBan hm WHERE hm.maHM = :maHM")
+                    .setParameter("maHM", maHM)
+                    .executeUpdate();
+
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw e;
         }
     }
 }

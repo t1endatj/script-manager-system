@@ -15,7 +15,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ public class Dashboard extends JPanel {
     private static final Color TONE_800 = new Color(35, 35, 35);
     private static final Color TONE_700 = new Color(82, 82, 82);
     private static final Color TONE_500 = new Color(120, 120, 120);
-    private static final Color TONE_200 = new Color(224, 224, 224);
     private static final Color BG_SOFT = new Color(245, 247, 250);
     private static final Color TEXT_DARK = new Color(24, 24, 24);
 
@@ -117,7 +115,7 @@ public class Dashboard extends JPanel {
         JButton coordinationBoard = createHeaderButton("Bảng điều phối");
         coordinationBoard.addActionListener(e -> mainFrame.showCoordinationManager());
 
-        JButton extendedModules = createHeaderButton("Phân hệ tài nguyên");
+        JButton extendedModules = createHeaderButton("Phân phối tài nguyên");
         extendedModules.addActionListener(e -> mainFrame.showExtendedModules());
 
         JButton logout = createHeaderButton("Đăng xuất");
@@ -151,7 +149,7 @@ public class Dashboard extends JPanel {
         setModuleAccess(userManager, role == UserRole.ADMIN, "Chỉ ADMIN mới có quyền quản lý người dùng.");
         btnPanel.add(userManager, "h 34!");
         btnPanel.add(coordinationBoard, "h 34!");
-        setModuleAccess(extendedModules, role != UserRole.USER, "USER không có quyền truy cập phân hệ tài nguyên.");
+        setModuleAccess(extendedModules, role != UserRole.USER, "USER không có quyền truy cập phân phối tài nguyên.");
         btnPanel.add(extendedModules, "h 34!");
         btnPanel.add(logout, "w 110!,h 34!");
         
@@ -267,11 +265,11 @@ public class Dashboard extends JPanel {
     }
 
     private JPanel createTimelinePanel() {
-        JPanel panel = createSectionPanel("Lịch tổng duyệt gần nhất", "Ưu tiên xử lý theo khung giờ");
+        JPanel panel = createSectionPanel("Lịch tổng duyệt trong ngày", "Theo dõi các mốc tổng duyệt diễn ra hôm nay");
 
         DefaultListModel<String> model = new DefaultListModel<>();
         if (timelineItems.isEmpty()) {
-            model.addElement("Chưa có dữ liệu lịch tổng duyệt");
+            model.addElement("Hôm nay chưa có lịch tổng duyệt");
         } else {
             for (DashboardTimelineItemDTO item : timelineItems) {
                 String timeText = item.getThoiGianDuyet() == null
@@ -306,10 +304,10 @@ public class Dashboard extends JPanel {
     }
 
     private JPanel createWarningPanel() {
-        JPanel panel = createSectionPanel("Cảnh báo tài nguyên", "Kiểm soát tồn kho và phân công");
+        JPanel panel = createSectionPanel("Cảnh báo tài nguyên", "Dựa trên dữ liệu phân phối tài nguyên");
 
         if (resourceAlerts.isEmpty()) {
-            panel.add(createWarningItem("Chưa có cảnh báo", "Dữ liệu thiết bị chưa sẵn sàng", 0, TONE_500), "growx");
+            panel.add(createWarningItem("Chưa có cảnh báo", "Chưa có dữ liệu phân phối tài nguyên", 0, TONE_500), "growx");
         } else {
             for (int i = 0; i < resourceAlerts.size(); i++) {
                 DashboardResourceAlertDTO alert = resourceAlerts.get(i);

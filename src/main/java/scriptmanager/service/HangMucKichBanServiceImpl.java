@@ -52,7 +52,9 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
             }
         }
         HangMucKichBan item = dao.findById(id);
-        if (item != null) dao.delete(item);
+        if (item != null) {
+            dao.deleteByIdWithDependencies(id);
+        }
     }
 
     private void enforceOwnership(HangMucKichBan item) {

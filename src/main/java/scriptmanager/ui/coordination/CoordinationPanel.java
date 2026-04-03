@@ -50,7 +50,7 @@ public class CoordinationPanel extends JPanel {
         panel.setBackground(TONE_900);
         panel.putClientProperty(FlatClientProperties.STYLE, "arc:24");
 
-        JLabel title = new JLabel("Bảng Điều Phối");
+        JLabel title = new JLabel("Điều phối sự kiện - Nhân lực");
         title.setFont(new Font("Segoe UI", Font.BOLD, 26));
         title.setForeground(Color.WHITE);
         panel.add(title, "growx");
@@ -74,29 +74,22 @@ public class CoordinationPanel extends JPanel {
     private JComponent createContent() {
         JTabbedPane tabs = new JTabbedPane();
 
-        scheduleModel = new DefaultTableModel(
-                new String[]{"Hạng mục", "Sự kiện", "Bắt đầu", "Kết thúc", "Số nhân sự", "Số thiết bị"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        scheduleModel = readonlyModel(new String[]{"Hạng mục", "Sự kiện", "Bắt đầu", "Kết thúc", "Số nhân sự"});
+        usageModel = readonlyModel(new String[]{"Nhân sự", "Nhiệm vụ", "Hạng mục", "Sự kiện", "Khung thời gian"});
 
-        usageModel = new DefaultTableModel(
-                new String[]{"Nhân sự", "Hạng mục", "Sự kiện", "Khung thời gian"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        JTable scheduleTable = buildTable(scheduleModel);
-        JTable usageTable = buildTable(usageModel);
-
-        tabs.addTab("Tổng quan lịch", wrapTable(scheduleTable));
-        tabs.addTab("Sử dụng nhân sự", wrapTable(usageTable));
+        tabs.addTab("Lịch hạng mục sự kiện", wrapTable(buildTable(scheduleModel)));
+        tabs.addTab("Phân bổ nhân lực", wrapTable(buildTable(usageModel)));
 
         return tabs;
+    }
+
+    private DefaultTableModel readonlyModel(String[] columns) {
+        return new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
     }
 
     private JTable buildTable(DefaultTableModel model) {
@@ -148,8 +141,7 @@ public class CoordinationPanel extends JPanel {
                                 item.get("tenSuKien"),
                                 item.get("batDau"),
                                 item.get("ketThuc"),
-                                item.get("soNhanSu"),
-                                item.get("soThietBi")
+                                item.get("soNhanSu")
                         });
                     }
 
@@ -157,6 +149,7 @@ public class CoordinationPanel extends JPanel {
                     for (Map<String, Object> item : resourceUsage) {
                         usageModel.addRow(new Object[]{
                                 item.get("tenNhanSu"),
+                                item.get("nhiemVu"),
                                 item.get("tenHangMuc"),
                                 item.get("tenSuKien"),
                                 item.get("thoiGian")
@@ -170,4 +163,3 @@ public class CoordinationPanel extends JPanel {
         }.execute();
     }
 }
-

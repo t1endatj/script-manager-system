@@ -444,7 +444,11 @@ public class HangMucKichBanPanel extends JPanel {
                         loadData();
                         clearForm();
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(HangMucKichBanPanel.this, "Lỗi: " + ex.getMessage());
+                        Throwable root = ex.getCause() != null ? ex.getCause() : ex;
+                        String message = (root.getMessage() == null || root.getMessage().isBlank())
+                                ? root.getClass().getSimpleName()
+                                : root.getMessage();
+                        JOptionPane.showMessageDialog(HangMucKichBanPanel.this, "Lỗi: " + message);
                     }
                 }
             }.execute();
