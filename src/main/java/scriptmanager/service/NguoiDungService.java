@@ -26,14 +26,17 @@ public class NguoiDungService {
     }
 
     public void save(NguoiDung nguoiDung) {
+        AuthorizationService.requireAdmin();
         nguoiDungDao.save(nguoiDung);
     }
 
     public void update(NguoiDung nguoiDung) {
+        AuthorizationService.requireAdmin();
         nguoiDungDao.update(nguoiDung);
     }
 
     public void delete(Integer id) {
+        AuthorizationService.requireAdmin();
         NguoiDung nguoiDung = nguoiDungDao.findById(id);
         if (nguoiDung != null) {
             nguoiDungDao.delete(nguoiDung);

@@ -1,5 +1,7 @@
 package scriptmanager.service;
 
+import scriptmanager.config.UserSession;
+import scriptmanager.enums.UserRole;
 import scriptmanager.config.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -15,14 +17,28 @@ public class CoordinationServiceImpl implements CoordinationService {
         List<Map<String, Object>> boardData = new ArrayList<>();
         
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "SELECT hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc, " +
-                         "(SELECT COUNT(pcns) FROM hm.phanCongNhanSus pcns), " +
-                         "(SELECT COUNT(pctb) FROM hm.phanCongThietBis pctb) " +
-                         "FROM HangMucKichBan hm " +
-                         "JOIN hm.suKienTiec sk " +
-                         "ORDER BY hm.tgBatDau ASC";
+            Integer currentUserId = UserSession.getCurrentUserId();
+            boolean scopedToUser = UserSession.getCurrentRole() == UserRole.USER && currentUserId != null;
+
+            String hql = scopedToUser
+                    ? "SELECT hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc, " +
+                      "(SELECT COUNT(pcns) FROM hm.phanCongNhanSus pcns), " +
+                      "(SELECT COUNT(pctb) FROM hm.phanCongThietBis pctb) " +
+                      "FROM HangMucKichBan hm " +
+                      "JOIN hm.suKienTiec sk " +
+                      "WHERE sk.nguoiDung.maND = :maND " +
+                      "ORDER BY hm.tgBatDau ASC"
+                    : "SELECT hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc, " +
+                      "(SELECT COUNT(pcns) FROM hm.phanCongNhanSus pcns), " +
+                      "(SELECT COUNT(pctb) FROM hm.phanCongThietBis pctb) " +
+                      "FROM HangMucKichBan hm " +
+                      "JOIN hm.suKienTiec sk " +
+                      "ORDER BY hm.tgBatDau ASC";
 
             Query<Object[]> query = session.createQuery(hql, Object[].class);
+            if (scopedToUser) {
+                query.setParameter("maND", currentUserId);
+            }
             List<Object[]> results = query.list();
 
             for (Object[] row : results) {
@@ -44,14 +60,28 @@ public class CoordinationServiceImpl implements CoordinationService {
         List<Map<String, Object>> usageData = new ArrayList<>();
         
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "SELECT ns.tenNS, hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc " +
-                         "FROM PhanCongNhanSu pc " +
-                         "JOIN pc.nhanSu ns " +
-                         "JOIN pc.hangMuc hm " +
-                         "JOIN hm.suKienTiec sk " +
-                         "ORDER BY ns.tenNS, hm.tgBatDau";
+            Integer currentUserId = UserSession.getCurrentUserId();
+            boolean scopedToUser = UserSession.getCurrentRole() == UserRole.USER && currentUserId != null;
+
+            String hql = scopedToUser
+                    ? "SELECT ns.tenNS, hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc " +
+                      "FROM PhanCongNhanSu pc " +
+                      "JOIN pc.nhanSu ns " +
+                      "JOIN pc.hangMuc hm " +
+                      "JOIN hm.suKienTiec sk " +
+                      "WHERE sk.nguoiDung.maND = :maND " +
+                      "ORDER BY ns.tenNS, hm.tgBatDau"
+                    : "SELECT ns.tenNS, hm.tenHM, sk.tenSuKien, hm.tgBatDau, hm.tgKetThuc " +
+                      "FROM PhanCongNhanSu pc " +
+                      "JOIN pc.nhanSu ns " +
+                      "JOIN pc.hangMuc hm " +
+                      "JOIN hm.suKienTiec sk " +
+                      "ORDER BY ns.tenNS, hm.tgBatDau";
 
             Query<Object[]> query = session.createQuery(hql, Object[].class);
+            if (scopedToUser) {
+                query.setParameter("maND", currentUserId);
+            }
             List<Object[]> results = query.list();
 
             for (Object[] row : results) {

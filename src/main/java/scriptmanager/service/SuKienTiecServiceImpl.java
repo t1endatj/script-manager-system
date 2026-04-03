@@ -2,8 +2,10 @@ package scriptmanager.service;
 
 import java.time.LocalDateTime;
 
+import scriptmanager.config.UserSession;
 import scriptmanager.dao.SuKienTiecDao;
 import scriptmanager.dao.SuKienTiecDaoImpl;
+import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.LichTongDuyet;
 import scriptmanager.entity.core.SuKienTiec;
 
@@ -17,7 +19,13 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
     }
 
     @Override
-    public List<SuKienTiec> findAll() { return dao.findAll(); }
+    public List<SuKienTiec> findAll() {
+        Integer currentUserId = UserSession.getCurrentUserId();
+        if (UserSession.getCurrentRole() == UserRole.USER && currentUserId != null) {
+            return dao.findByNguoiDungId(currentUserId);
+        }
+        return dao.findAll();
+    }
 
     @Override
     public SuKienTiec findById(int id) { return dao.findById(id); }
@@ -30,6 +38,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
 
     @Override
     public void save(SuKienTiec item) {
+        enforceOwnership(item);
         validateBusinessRules(item, 0);
         addDefaultRehearsal(item);
         dao.save(item);
@@ -37,12 +46,35 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
 
     @Override
     public void update(SuKienTiec item) {
+        enforceOwnership(item);
         validateBusinessRules(item, item.getMaSK());
         dao.update(item);
     }
 
     @Override
-    public void delete(int id) { dao.deleteById(id); }
+    public void delete(int id) {
+        if (UserSession.getCurrentRole() == UserRole.USER) {
+            SuKienTiec existing = dao.findById(id);
+            Integer currentUserId = UserSession.getCurrentUserId();
+            if (existing == null || currentUserId == null || existing.getNguoiDung() == null
+                    || existing.getNguoiDung().getMaND() != currentUserId) {
+                throw new SecurityException("Bạn không có quyền xóa sự kiện này.");
+            }
+        }
+        dao.deleteById(id);
+    }
+
+    private void enforceOwnership(SuKienTiec item) {
+        if (UserSession.getCurrentRole() != UserRole.USER) {
+            return;
+        }
+
+        Integer currentUserId = UserSession.getCurrentUserId();
+        if (currentUserId == null || item == null || item.getNguoiDung() == null
+                || item.getNguoiDung().getMaND() != currentUserId) {
+            throw new SecurityException("Bạn chỉ có thể thao tác với sự kiện của chính mình.");
+        }
+    }
 
     private void validateBusinessRules(SuKienTiec item, int excludeId) {
         validateTime(item);

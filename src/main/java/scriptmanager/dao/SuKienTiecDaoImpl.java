@@ -6,6 +6,7 @@ import scriptmanager.config.HibernateUtil;
 import scriptmanager.entity.core.SuKienTiec;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class SuKienTiecDaoImpl extends GenericDaoImpl<SuKienTiec, Integer> implements SuKienTiecDao {
     public SuKienTiecDaoImpl() {
@@ -89,6 +90,17 @@ public class SuKienTiecDaoImpl extends GenericDaoImpl<SuKienTiec, Integer> imple
 
             Long count = query.uniqueResult();
             return count != null && count > 0;
+        }
+    }
+
+    @Override
+    public List<SuKienTiec> findByNguoiDungId(int maNguoiDung) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "FROM SuKienTiec sk WHERE sk.nguoiDung.maND = :maND ORDER BY sk.thoiGianToChuc DESC",
+                            SuKienTiec.class)
+                    .setParameter("maND", maNguoiDung)
+                    .list();
         }
     }
 }

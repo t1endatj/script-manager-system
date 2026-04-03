@@ -22,17 +22,20 @@ public class DoiTacService {
     }
 
     public void save(DoiTac item) {
+        AuthorizationService.requireManagerOrAdmin();
         validate(item, null);
         doiTacDao.save(item);
     }
 
     public void update(DoiTac item) {
+        AuthorizationService.requireManagerOrAdmin();
         Integer excludeId = item != null ? item.getMaDT() : null;
         validate(item, excludeId);
         doiTacDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         DoiTac item = doiTacDao.findById(id);
         if (item != null) {
             doiTacDao.delete(item);

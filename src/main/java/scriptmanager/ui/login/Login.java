@@ -288,6 +288,7 @@ public class Login extends JPanel {
             } else {
                 RememberMeStore.clearRememberedUser();
             }
+            mainFrame.setCurrentUser(user);
             mainFrame.showDashboard();
             return;
         }
