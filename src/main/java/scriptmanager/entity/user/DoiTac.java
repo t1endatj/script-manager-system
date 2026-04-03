@@ -10,7 +10,10 @@ import java.util.Set;
 import java.util.HashSet;
 
 @Entity
-@Table(name = "DoiTac")
+@Table(name = "DoiTac", indexes = {
+        @Index(name = "IDX_DT_TEN", columnList = "TenDonVi"),
+        @Index(name = "IDX_DT_SDT", columnList = "SDT")
+})
 public class DoiTac {
 
     @Id

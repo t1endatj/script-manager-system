@@ -19,8 +19,11 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HangMucKichBanPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(HangMucKichBanPanel.class.getName());
 
     private static final Color TONE_900 = new Color(17, 17, 17);
     private static final Color BG_SOFT = new Color(245, 247, 250);
@@ -224,7 +227,7 @@ public class HangMucKichBanPanel extends JPanel {
                         cbSuKien.addItem(new SuKienItem(sk.getMaSK(), sk.getTenSuKien()));
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi tải danh sách sự kiện cho combobox hạng mục", ex);
                 }
             }
         }.execute();
@@ -249,7 +252,7 @@ public class HangMucKichBanPanel extends JPanel {
                         tableModel.addRow(new Object[]{hm.getMaHM(), hm.getTenHM(), skStr, startStr, endStr});
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi tải dữ liệu hạng mục kịch bản", ex);
                     JOptionPane.showMessageDialog(HangMucKichBanPanel.this, "Lỗi tải Kịch Bản: " + ex.getMessage());
                 }
             }
@@ -295,7 +298,7 @@ public class HangMucKichBanPanel extends JPanel {
                         }
                     }
                 } catch (Exception ex) {
-                   ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi đổ dữ liệu hạng mục lên form", ex);
                 }
             }
         }.execute();
@@ -320,6 +323,16 @@ public class HangMucKichBanPanel extends JPanel {
 
         if (ten.isEmpty() || skItem == null) {
             JOptionPane.showMessageDialog(this, "Tên hạng mục và sự kiện không được rỗng!");
+            return;
+        }
+
+        if (tgbd == null || tgkt == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc.");
+            return;
+        }
+
+        if (!tgbd.isBefore(tgkt)) {
+            JOptionPane.showMessageDialog(this, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
             return;
         }
 
@@ -365,6 +378,16 @@ public class HangMucKichBanPanel extends JPanel {
 
         if (ten.isEmpty() || skItem == null) {
             JOptionPane.showMessageDialog(this, "Tên và sự kiện không được rỗng!");
+            return;
+        }
+
+        if (tgbd == null || tgkt == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc.");
+            return;
+        }
+
+        if (!tgbd.isBefore(tgkt)) {
+            JOptionPane.showMessageDialog(this, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
             return;
         }
 

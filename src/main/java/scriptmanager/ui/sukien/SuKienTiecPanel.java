@@ -19,8 +19,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SuKienTiecPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(SuKienTiecPanel.class.getName());
 
     private static final Color TONE_900 = new Color(17, 17, 17);
     private static final Color BG_SOFT = new Color(245, 247, 250);
@@ -212,7 +215,7 @@ public class SuKienTiecPanel extends JPanel {
                         cbNguoiDung.addItem(new NguoiDungItem(nd.getMaND(), nd.getTenDangNhap()));
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi tải danh sách người dùng cho combobox sự kiện", ex);
                 }
             }
         }.execute();
@@ -236,7 +239,7 @@ public class SuKienTiecPanel extends JPanel {
                         tableModel.addRow(new Object[]{sk.getMaSK(), sk.getTenSuKien(), timeStr, sk.getDiaDiem(), userStr});
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi tải dữ liệu sự kiện", ex);
                     JOptionPane.showMessageDialog(SuKienTiecPanel.this, "Lỗi tải dữ liệu Sự Kiện: " + ex.getMessage());
                 }
             }
@@ -274,7 +277,7 @@ public class SuKienTiecPanel extends JPanel {
                         }
                     }
                 } catch (Exception ex) {
-                   ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi đổ dữ liệu sự kiện lên form", ex);
                 }
             }
         }.execute();

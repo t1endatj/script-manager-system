@@ -28,7 +28,7 @@ public class ExtendedModulePanel extends JPanel {
     private static final Color BG_SOFT = new Color(245, 247, 250);
     private static final Color CARD_BG = Color.WHITE;
     private static final Color TEXT_DARK = new Color(17, 17, 17);
-    private static final Color INPUT_TEXT = new Color(229, 231, 235);
+    private static final Color INPUT_TEXT = new Color(46, 42, 39);
 
     private final MainFrame mainFrame;
     private final DoiTacService doiTacService = new DoiTacService();

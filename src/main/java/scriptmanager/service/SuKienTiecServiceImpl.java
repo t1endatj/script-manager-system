@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import scriptmanager.dao.SuKienTiecDao;
 import scriptmanager.dao.SuKienTiecDaoImpl;
+import scriptmanager.entity.core.LichTongDuyet;
 import scriptmanager.entity.core.SuKienTiec;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
     @Override
     public void save(SuKienTiec item) {
         validateBusinessRules(item, 0);
+        addDefaultRehearsal(item);
         dao.save(item);
     }
 
@@ -78,5 +80,22 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
         if (duplicated) {
             throw new IllegalArgumentException("Sự kiện đã tồn tại (trùng tên, thời gian, địa điểm, người phụ trách).");
         }
+    }
+
+    private void addDefaultRehearsal(SuKienTiec item) {
+        if (item == null || item.getThoiGianToChuc() == null || !item.getLichTongDuyets().isEmpty()) {
+            return;
+        }
+
+        LocalDateTime rehearsalTime = item.getThoiGianToChuc().minusDays(1);
+        if (rehearsalTime.isBefore(LocalDateTime.now())) {
+            rehearsalTime = LocalDateTime.now().plusHours(1);
+        }
+
+        LichTongDuyet draft = new LichTongDuyet();
+        draft.setThoiGianDuyet(rehearsalTime);
+        draft.setNoiDungDuyet("Tổng duyệt mặc định cho sự kiện mới.");
+        draft.setTrangThai("Chưa duyệt");
+        item.addLichTongDuyet(draft);
     }
 }
