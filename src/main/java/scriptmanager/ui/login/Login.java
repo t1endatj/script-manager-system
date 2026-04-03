@@ -2,8 +2,10 @@ package scriptmanager.ui.login;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;
-import com.formdev.flatlaf.FlatClientProperties;
-import net.miginfocom.swing.MigLayout;
+import scriptmanager.config.RememberMeStore;
+import scriptmanager.entity.user.NguoiDung;
+import scriptmanager.service.AuthService;
+import scriptmanager.service.AuthServiceImpl;
 import scriptmanager.ui.main.MainFrame;
 
 import javax.swing.*;
@@ -16,6 +18,7 @@ import java.util.Objects;
 public class Login extends JPanel {
 
     private final MainFrame mainFrame;
+    private final AuthService authService;
 
     private JTextField txtUsername;
     private JPasswordField txtPassword;
@@ -24,6 +27,7 @@ public class Login extends JPanel {
 
     public Login(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
+        this.authService = new AuthServiceImpl();
         init();
     }
 
@@ -53,8 +57,14 @@ public class Login extends JPanel {
 
         txtUsername = new JTextField();
         txtPassword = new JPasswordField();
-        chRememberMe = new JCheckBox("Remember me");
+        chRememberMe = new JCheckBox("Ghi nhớ đăng nhập");
         cmdLogin = new JButton("Login");
+
+        String rememberedUsername = RememberMeStore.getRememberedUsername();
+        if (!rememberedUsername.isBlank()) {
+            txtUsername.setText(rememberedUsername);
+            chRememberMe.setSelected(true);
+        }
 
         JPanel shadowPanel = new JPanel(new BorderLayout()) {
             @Override
@@ -265,7 +275,13 @@ public class Login extends JPanel {
         }
 
 
-        if ("admin".equals(username) && "1".equals(password)) {
+        NguoiDung user = authService.login(username, password);
+        if (user != null) {
+            if (chRememberMe.isSelected()) {
+                RememberMeStore.saveRememberedUser(username);
+            } else {
+                RememberMeStore.clearRememberedUser();
+            }
             mainFrame.showDashboard();
             return;
         }
