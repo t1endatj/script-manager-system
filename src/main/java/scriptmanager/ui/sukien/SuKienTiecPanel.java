@@ -21,8 +21,8 @@ import java.util.List;
 
 public class SuKienTiecPanel extends JPanel {
 
-    private static final Color TONE_900 = new Color(29, 36, 68);
-    private static final Color BG_SOFT = new Color(232, 235, 245);
+    private static final Color TONE_900 = new Color(17, 17, 17);
+    private static final Color BG_SOFT = new Color(245, 247, 250);
 
     private final MainFrame mainFrame;
     private final SuKienTiecService suKienTiecService;
@@ -75,7 +75,7 @@ public class SuKienTiecPanel extends JPanel {
 
         JButton btnBack = new JButton("Quay lại Dashboard");
         btnBack.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;background:#C1C4D5;foreground:#1D2444;focusWidth:0;borderWidth:0");
+                "arc:12;background:#F3F4F6;foreground:#111111;focusWidth:0;borderWidth:0");
         btnBack.addActionListener(e -> mainFrame.showDashboard());
         panel.add(btnBack, "w 150!,h 34!");
 
@@ -85,7 +85,7 @@ public class SuKienTiecPanel extends JPanel {
     private JPanel createTablePanel() {
         JPanel panel = new JPanel(new MigLayout("fill,wrap,insets 14 16 14 16", "[grow]", "[grow]"));
         panel.setBackground(Color.WHITE);
-        panel.putClientProperty(FlatClientProperties.STYLE, "arc:18;border:1,1,1,1,#D5DAEA");
+        panel.putClientProperty(FlatClientProperties.STYLE, "arc:18;border:1,1,1,1,#D1D5DB");
 
         String[] cols = {"Mã SK", "Tên Sự Kiện", "Thời Gian", "Địa Điểm", "Người Tạo(ID)"};
         tableModel = new DefaultTableModel(cols, 0) {
@@ -98,10 +98,10 @@ public class SuKienTiecPanel extends JPanel {
         table = new JTable(tableModel);
         table.setRowHeight(34);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setSelectionBackground(new Color(221, 225, 241));
+        table.setSelectionBackground(new Color(229, 231, 235));
         table.setSelectionForeground(TONE_900);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.getTableHeader().setBackground(new Color(223, 226, 238));
+        table.getTableHeader().setBackground(new Color(243, 244, 246));
         table.getTableHeader().setForeground(TONE_900);
         table.setShowVerticalLines(false);
 
@@ -124,7 +124,7 @@ public class SuKienTiecPanel extends JPanel {
     private JPanel createFormPanel() {
         JPanel panel = new JPanel(new MigLayout("fillx,wrap,insets 20 16 20 16", "[grow]", "[]12[]12[]12[]12[]24[]12[]"));
         panel.setBackground(Color.WHITE);
-        panel.putClientProperty(FlatClientProperties.STYLE, "arc:18;border:1,1,1,1,#D5DAEA");
+        panel.putClientProperty(FlatClientProperties.STYLE, "arc:18;border:1,1,1,1,#D1D5DB");
 
         JLabel lblTitle = new JLabel("Thông Tin Sự Kiện");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -163,16 +163,16 @@ public class SuKienTiecPanel extends JPanel {
         panel.add(cbNguoiDung, "growx, h 34!");
 
         JButton btnSave = new JButton("Lưu Mới (Thêm)");
-        btnSave.putClientProperty(FlatClientProperties.STYLE, "background:#1D2444;foreground:#FFFFFF;arc:12;focusWidth:0");
-        
+        btnSave.putClientProperty(FlatClientProperties.STYLE, "background:#22C55E;foreground:#FFFFFF;arc:12;focusWidth:0");
+
         JButton btnUpdate = new JButton("Cập Nhật");
-        btnUpdate.putClientProperty(FlatClientProperties.STYLE, "background:#5F6684;foreground:#FFFFFF;arc:12;focusWidth:0");
-        
+        btnUpdate.putClientProperty(FlatClientProperties.STYLE, "background:#3B82F6;foreground:#FFFFFF;arc:12;focusWidth:0");
+
         JButton btnDelete = new JButton("Xóa");
         btnDelete.putClientProperty(FlatClientProperties.STYLE, "background:#FF4C4C;foreground:#FFFFFF;arc:12;focusWidth:0");
         
         JButton btnClear = new JButton("Làm Mới");
-        btnClear.putClientProperty(FlatClientProperties.STYLE, "background:#E8EBF5;foreground:#1D2444;arc:12;focusWidth:0");
+        btnClear.putClientProperty(FlatClientProperties.STYLE, "background:#F3F4F6;foreground:#111111;arc:12;focusWidth:0");
 
         btnSave.addActionListener(e -> saveEvent());
         btnUpdate.addActionListener(e -> updateEvent());

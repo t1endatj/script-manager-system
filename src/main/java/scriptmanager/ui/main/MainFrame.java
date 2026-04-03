@@ -1,10 +1,12 @@
 package scriptmanager.ui.main;
 
+import scriptmanager.config.RememberMeStore;
 import scriptmanager.ui.dashboard.Dashboard;
 import scriptmanager.ui.hangmuc.HangMucKichBanPanel;
 import scriptmanager.ui.login.Login;
 import scriptmanager.ui.sukien.SuKienTiecPanel;
 import scriptmanager.ui.user.NguoiDungPanel;
+import scriptmanager.ui.coordination.CoordinationPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +23,11 @@ public class MainFrame extends JFrame {
         setSize(new Dimension(1200, 700));
         setLocationRelativeTo(null);
 
-        showLogin();
+        if (RememberMeStore.isRemembered()) {
+            showDashboard();
+        } else {
+            showLogin();
+        }
     }
 
     public void showLogin() {
@@ -52,5 +58,22 @@ public class MainFrame extends JFrame {
         setContentPane(new HangMucKichBanPanel(this));
         revalidate();
         repaint();
+    }
+
+    public void showCoordinationManager() {
+        setContentPane(new CoordinationPanel(this));
+        revalidate();
+        repaint();
+    }
+
+    public void showExtendedModules() {
+        setContentPane(new ExtendedModulePanel(this));
+        revalidate();
+        repaint();
+    }
+
+    public void logout() {
+        RememberMeStore.clearRememberedUser();
+        showLogin();
     }
 }
