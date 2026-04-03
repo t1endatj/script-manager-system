@@ -22,14 +22,17 @@ public class DanhSachNhacService {
     }
 
     public void save(DanhSachNhac item) {
+        AuthorizationService.requireManagerOrAdmin();
         danhSachNhacDao.save(item);
     }
 
     public void update(DanhSachNhac item) {
+        AuthorizationService.requireManagerOrAdmin();
         danhSachNhacDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         DanhSachNhac item = danhSachNhacDao.findById(id);
         if (item != null) {
             danhSachNhacDao.delete(item);

@@ -275,13 +275,20 @@ public class Login extends JPanel {
         }
 
 
-        NguoiDung user = authService.login(username, password);
+        NguoiDung user;
+        try {
+            user = authService.login(username, password);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình DB.");
+            return;
+        }
         if (user != null) {
             if (chRememberMe.isSelected()) {
                 RememberMeStore.saveRememberedUser(username);
             } else {
                 RememberMeStore.clearRememberedUser();
             }
+            mainFrame.setCurrentUser(user);
             mainFrame.showDashboard();
             return;
         }

@@ -22,14 +22,17 @@ public class ThietBiService {
     }
 
     public void save(ThietBi item) {
+        AuthorizationService.requireManagerOrAdmin();
         thietBiDao.save(item);
     }
 
     public void update(ThietBi item) {
+        AuthorizationService.requireManagerOrAdmin();
         thietBiDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         ThietBi item = thietBiDao.findById(id);
         if (item != null) {
             thietBiDao.delete(item);

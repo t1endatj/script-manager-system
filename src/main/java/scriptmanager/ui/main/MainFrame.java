@@ -1,6 +1,9 @@
 package scriptmanager.ui.main;
 
 import scriptmanager.config.RememberMeStore;
+import scriptmanager.config.UserSession;
+import scriptmanager.entity.user.NguoiDung;
+import scriptmanager.service.NguoiDungService;
 import scriptmanager.ui.dashboard.Dashboard;
 import scriptmanager.ui.hangmuc.HangMucKichBanPanel;
 import scriptmanager.ui.login.Login;
@@ -12,6 +15,8 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MainFrame extends JFrame {
+    private final NguoiDungService nguoiDungService = new NguoiDungService();
+    private NguoiDung currentUser;
 
     public MainFrame() {
         init();
@@ -24,10 +29,16 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
 
         if (RememberMeStore.isRemembered()) {
-            showDashboard();
-        } else {
-            showLogin();
+            String rememberedUsername = RememberMeStore.getRememberedUsername();
+            NguoiDung rememberedUser = nguoiDungService.getByUsername(rememberedUsername);
+            if (rememberedUser != null) {
+                setCurrentUser(rememberedUser);
+                showDashboard();
+                return;
+            }
+            RememberMeStore.clearRememberedUser();
         }
+        showLogin();
     }
 
     public void showLogin() {
@@ -40,6 +51,15 @@ public class MainFrame extends JFrame {
         setContentPane(new Dashboard(this));
         revalidate();
         repaint();
+    }
+
+    public NguoiDung getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(NguoiDung currentUser) {
+        this.currentUser = currentUser;
+        UserSession.setCurrentUser(currentUser);
     }
 
     public void showUserManager() {
@@ -74,6 +94,8 @@ public class MainFrame extends JFrame {
 
     public void logout() {
         RememberMeStore.clearRememberedUser();
+        currentUser = null;
+        UserSession.clear();
         showLogin();
     }
 }

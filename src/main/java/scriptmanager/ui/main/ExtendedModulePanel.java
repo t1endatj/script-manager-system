@@ -17,6 +17,7 @@ import scriptmanager.service.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,6 +28,7 @@ public class ExtendedModulePanel extends JPanel {
     private static final Color BG_SOFT = new Color(245, 247, 250);
     private static final Color CARD_BG = Color.WHITE;
     private static final Color TEXT_DARK = new Color(17, 17, 17);
+    private static final Color INPUT_TEXT = new Color(46, 42, 39);
 
     private final MainFrame mainFrame;
     private final DoiTacService doiTacService = new DoiTacService();
@@ -57,7 +59,7 @@ public class ExtendedModulePanel extends JPanel {
                 "arc:18;" +
                         "border:1,1,1,1,#D1D5DB");
 
-        JLabel title = new JLabel("Phân hệ tài nguyên mở rộng");
+        JLabel title = new JLabel("Tài nguyên");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(TEXT_DARK);
 
@@ -112,6 +114,10 @@ public class ExtendedModulePanel extends JPanel {
         add.addActionListener(e -> {
             try {
                 doiTacService.save(new DoiTac(ten.getText().trim(), linhVuc.getText().trim(), sdt.getText().trim()));
+                ten.setText("");
+                linhVuc.setText("");
+                sdt.setText("");
+                table.clearSelection();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm đối tác thất bại: " + ex.getMessage());
@@ -128,7 +134,22 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên đơn vị", "Lĩnh vực", "SĐT"}, new JComponent[]{ten, linhVuc, sdt}, add, delete);
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> {
+            ten.setText("");
+            linhVuc.setText("");
+            sdt.setText("");
+            table.clearSelection();
+            ten.requestFocusInWindow();
+        });
+
+        return wrapCrud(table, load, new String[]{"Tên đơn vị", "Lĩnh vực", "SĐT"}, new JComponent[]{ten, linhVuc, sdt}, add, delete, reset);
     }
 
     private JComponent createNhanSuTab() {
@@ -470,6 +491,18 @@ public class ExtendedModulePanel extends JPanel {
             JButton add,
             JButton delete
     ) {
+        return wrapCrud(table, load, labels, fields, add, delete, null);
+    }
+
+    private JComponent wrapCrud(
+            JTable table,
+            Runnable load,
+            String[] labels,
+            JComponent[] fields,
+            JButton add,
+            JButton delete,
+            JButton extra
+    ) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(BG_SOFT);
 
@@ -478,6 +511,10 @@ public class ExtendedModulePanel extends JPanel {
         for (int i = 0; i < labels.length; i++) {
             JLabel label = new JLabel(labels[i] + ":");
             label.setForeground(TEXT_DARK);
+            if (fields[i] instanceof JTextComponent textComponent) {
+                textComponent.setForeground(INPUT_TEXT);
+                textComponent.setCaretColor(INPUT_TEXT);
+            }
             form.add(label);
             form.add(fields[i], "growx");
         }
@@ -495,6 +532,9 @@ public class ExtendedModulePanel extends JPanel {
         buttons.setBackground(CARD_BG);
         buttons.add(add);
         buttons.add(delete);
+        if (extra != null) {
+            buttons.add(extra);
+        }
         buttons.add(refresh);
 
         JPanel top = new JPanel(new BorderLayout());
@@ -543,8 +583,8 @@ public class ExtendedModulePanel extends JPanel {
     private void styleDeleteButton(JButton button) {
         button.putClientProperty(FlatClientProperties.STYLE,
                 "arc:10;" +
-                        "background:#E5E7EB;" +
-                        "foreground:#111111;" +
+                        "background:#DC2626;" +
+                        "foreground:#FFFFFF;" +
                         "focusWidth:0;" +
                         "borderWidth:0");
     }

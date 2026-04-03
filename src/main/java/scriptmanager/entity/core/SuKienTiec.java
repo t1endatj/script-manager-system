@@ -12,7 +12,11 @@ import java.util.Set;
 
 
 @Entity
-@Table(name = "SuKienTiec")
+@Table(name = "SuKienTiec", indexes = {
+        @Index(name = "IDX_SK_TEN", columnList = "TenSuKien"),
+        @Index(name = "IDX_SK_THOIGIAN", columnList = "ThoiGianToChuc"),
+        @Index(name = "IDX_SK_MAND", columnList = "MaND")
+})
 public class SuKienTiec {
 
     @Id

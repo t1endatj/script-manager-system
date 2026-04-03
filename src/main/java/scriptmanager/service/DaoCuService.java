@@ -22,14 +22,17 @@ public class DaoCuService {
     }
 
     public void save(DaoCu item) {
+        AuthorizationService.requireManagerOrAdmin();
         daoCuDao.save(item);
     }
 
     public void update(DaoCu item) {
+        AuthorizationService.requireManagerOrAdmin();
         daoCuDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         DaoCu item = daoCuDao.findById(id);
         if (item != null) {
             daoCuDao.delete(item);

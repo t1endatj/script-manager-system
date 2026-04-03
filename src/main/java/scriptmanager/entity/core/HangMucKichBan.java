@@ -178,13 +178,8 @@ public class HangMucKichBan {
     }
 
     public void setSuKienTiec(SuKienTiec suKienTiec) {
-        if (this.suKienTiec != null) {
-            this.suKienTiec.getHangMucs().remove(this);
-        }
+        // Keep owning side assignment only to avoid triggering lazy collections on detached entities.
         this.suKienTiec = suKienTiec;
-        if (suKienTiec != null) {
-            suKienTiec.getHangMucs().add(this);
-        }
     }
 
     public Set<SuDungDaoCu> getSuDungDaoCus() {

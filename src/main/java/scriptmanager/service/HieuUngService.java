@@ -22,14 +22,17 @@ public class HieuUngService {
     }
 
     public void save(HieuUng item) {
+        AuthorizationService.requireManagerOrAdmin();
         hieuUngDao.save(item);
     }
 
     public void update(HieuUng item) {
+        AuthorizationService.requireManagerOrAdmin();
         hieuUngDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         HieuUng item = hieuUngDao.findById(id);
         if (item != null) {
             hieuUngDao.delete(item);

@@ -11,8 +11,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class NguoiDungPanel extends JPanel {
+    private static final Logger LOGGER = Logger.getLogger(NguoiDungPanel.class.getName());
 
     private static final Color TONE_900 = new Color(17, 17, 17);
     private static final Color BG_SOFT = new Color(245, 247, 250);
@@ -189,7 +192,7 @@ public class NguoiDungPanel extends JPanel {
                         tableModel.addRow(new Object[]{nd.getMaND(), nd.getTenDangNhap(), nd.getQuyenHan()});
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Lỗi tải dữ liệu người dùng", ex);
                     JOptionPane.showMessageDialog(NguoiDungPanel.this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
                 }
             }
