@@ -18,6 +18,7 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class SuKienTiecPanel extends JPanel {
 
@@ -316,7 +317,7 @@ public class SuKienTiecPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
@@ -360,10 +361,23 @@ public class SuKienTiecPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
+    }
+
+    private String resolveErrorMessage(Exception ex) {
+        Throwable root = ex;
+        if (ex instanceof ExecutionException && ex.getCause() != null) {
+            root = ex.getCause();
+        }
+
+        String message = root.getMessage();
+        if (message == null || message.isBlank()) {
+            return "Thao tác thất bại. Vui lòng kiểm tra dữ liệu và thử lại.";
+        }
+        return message;
     }
 
     private void deleteEvent() {
