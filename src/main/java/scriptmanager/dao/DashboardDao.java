@@ -7,8 +7,10 @@ import scriptmanager.dto.DashboardTaskItemDTO;
 import scriptmanager.dto.DashboardTimelineItemDTO;
 import org.hibernate.Session;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class DashboardDao {
@@ -24,11 +26,17 @@ public class DashboardDao {
 
     public List<DashboardTimelineItemDTO> getLatestRehearsals(int limit) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime startOfNextDay = startOfDay.plusDays(1);
+
             List<Object[]> rows = session.createQuery(
                             "SELECT l.thoiGianDuyet, s.tenSuKien, l.noiDungDuyet " +
                                     "FROM LichTongDuyet l JOIN l.suKienTiec s " +
-                                    "ORDER BY l.thoiGianDuyet DESC",
+                                    "WHERE l.thoiGianDuyet >= :startOfDay AND l.thoiGianDuyet < :startOfNextDay " +
+                                    "ORDER BY l.thoiGianDuyet ASC",
                             Object[].class)
+                    .setParameter("startOfDay", startOfDay)
+                    .setParameter("startOfNextDay", startOfNextDay)
                     .setMaxResults(limit)
                     .list();
 
@@ -46,25 +54,47 @@ public class DashboardDao {
 
     public List<DashboardResourceAlertDTO> getResourceAlerts(int limit) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<Object[]> rows = session.createQuery(
+            List<DashboardResourceAlertDTO> items = new ArrayList<>();
+
+            List<Object[]> thietBiRows = session.createQuery(
                             "SELECT t.tenTB, COALESCE(SUM(pc.soLuongSuDung), 0), t.soLuong " +
                                     "FROM ThietBi t LEFT JOIN t.phanCongThietBis pc " +
-                                    "GROUP BY t.maTB, t.tenTB, t.soLuong " +
-                                    "ORDER BY COALESCE(SUM(pc.soLuongSuDung), 0) DESC, t.soLuong ASC",
+                                    "GROUP BY t.maTB, t.tenTB, t.soLuong",
                             Object[].class)
-                    .setMaxResults(limit)
                     .list();
 
-            List<DashboardResourceAlertDTO> items = new ArrayList<>();
-            for (Object[] row : rows) {
+            for (Object[] row : thietBiRows) {
                 int daDat = ((Number) row[1]).intValue();
                 int tongSo = ((Number) row[2]).intValue();
                 if (tongSo <= 0) {
                     continue;
                 }
-                items.add(new DashboardResourceAlertDTO((String) row[0], daDat, tongSo));
+                items.add(new DashboardResourceAlertDTO("Thiết bị: " + row[0], daDat, tongSo));
             }
-            return items;
+
+            List<Object[]> daoCuRows = session.createQuery(
+                            "SELECT d.tenDaoCu, COALESCE(SUM(sd.soLuongSuDung), 0), d.soLuong " +
+                                    "FROM DaoCu d LEFT JOIN d.suDungDaoCus sd " +
+                                    "GROUP BY d.maDaoCu, d.tenDaoCu, d.soLuong",
+                            Object[].class)
+                    .list();
+
+            for (Object[] row : daoCuRows) {
+                int daDat = ((Number) row[1]).intValue();
+                int tongSo = ((Number) row[2]).intValue();
+                if (tongSo <= 0) {
+                    continue;
+                }
+                items.add(new DashboardResourceAlertDTO("Đạo cụ: " + row[0], daDat, tongSo));
+            }
+
+            items.sort(Comparator
+                    .comparingInt(DashboardResourceAlertDTO::getPhanTram)
+                    .reversed()
+                    .thenComparingInt(DashboardResourceAlertDTO::getDaDat)
+                    .reversed());
+
+            return items.size() <= limit ? items : new ArrayList<>(items.subList(0, limit));
         }
     }
 

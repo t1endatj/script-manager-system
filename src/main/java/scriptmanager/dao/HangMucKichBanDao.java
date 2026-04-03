@@ -6,4 +6,6 @@ import scriptmanager.entity.core.HangMucKichBan;
 
 public interface HangMucKichBanDao extends GenericDao<HangMucKichBan, Integer> {
 	List<HangMucKichBan> findByNguoiDungId(int maNguoiDung);
+
+	void deleteByIdWithDependencies(int maHM);
 }
