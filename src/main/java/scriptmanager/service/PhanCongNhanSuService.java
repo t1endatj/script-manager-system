@@ -7,6 +7,8 @@ import scriptmanager.entity.assignment.PhanCongNhanSu;
 import scriptmanager.entity.assignment.pk.PhanCongNhanSuId;
 import scriptmanager.entity.core.HangMucKichBan;
 import scriptmanager.entity.user.NhanSu;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,7 +46,7 @@ public class PhanCongNhanSuService {
 
         String normalizedTask = nhiemVu == null ? "" : nhiemVu.trim();
         if (maSK <= 0 || maNS <= 0) {
-            throw new IllegalArgumentException("Mã sự kiện và mã nhân sự phải hợp lệ.");
+            throw new ValidationException("Mã sự kiện và mã nhân sự phải hợp lệ.");
         }
 
         Transaction transaction = null;
@@ -53,7 +55,7 @@ public class PhanCongNhanSuService {
 
             NhanSu nhanSu = session.get(NhanSu.class, maNS);
             if (nhanSu == null) {
-                throw new IllegalArgumentException("Không tìm thấy nhân sự.");
+                throw new ValidationException("Không tìm thấy nhân sự.");
             }
 
             // Lấy toàn bộ hạng mục của sự kiện để phân công đồng loạt.
@@ -64,7 +66,7 @@ public class PhanCongNhanSuService {
                     .list();
 
             if (hangMucs.isEmpty()) {
-                throw new IllegalArgumentException("Sự kiện chưa có hạng mục để phân công nhân sự.");
+                throw new BusinessRuleException("Sự kiện chưa có hạng mục để phân công nhân sự.");
             }
 
             // Nếu đã có bản ghi thì cập nhật nhiệm vụ, chưa có thì tạo mới.
@@ -96,7 +98,7 @@ public class PhanCongNhanSuService {
 
         String normalizedTask = nhiemVu == null ? "" : nhiemVu.trim();
         if (maSK <= 0 || maHM <= 0 || maNS <= 0) {
-            throw new IllegalArgumentException("Sự kiện, hạng mục và nhân sự phải hợp lệ.");
+            throw new ValidationException("Sự kiện, hạng mục và nhân sự phải hợp lệ.");
         }
 
         Transaction transaction = null;
@@ -105,12 +107,12 @@ public class PhanCongNhanSuService {
 
             NhanSu nhanSu = session.get(NhanSu.class, maNS);
             if (nhanSu == null) {
-                throw new IllegalArgumentException("Không tìm thấy nhân sự.");
+                throw new ValidationException("Không tìm thấy nhân sự.");
             }
 
             HangMucKichBan hangMuc = session.get(HangMucKichBan.class, maHM);
             if (hangMuc == null || hangMuc.getSuKienTiec() == null || hangMuc.getSuKienTiec().getMaSK() != maSK) {
-                throw new IllegalArgumentException("Hạng mục không thuộc sự kiện đã chọn.");
+                throw new ValidationException("Hạng mục không thuộc sự kiện đã chọn.");
             }
 
             // Mỗi hạng mục chỉ cho một người phụ trách chính.
@@ -122,7 +124,7 @@ public class PhanCongNhanSuService {
                     .setParameter("maNS", maNS)
                     .uniqueResult();
             if (assignedToCurrentHangMuc != null && assignedToCurrentHangMuc > 0) {
-                throw new IllegalArgumentException("Hạng mục đã có người phụ trách, không thể phân công thêm.");
+                throw new BusinessRuleException("Hạng mục đã có người phụ trách, không thể phân công thêm.");
             }
 
             // Nhân sự đã có hạng mục khác thì không nhận thêm.
@@ -137,7 +139,7 @@ public class PhanCongNhanSuService {
                     .list();
             if (!existingOtherAssignments.isEmpty()) {
                 Object[] row = existingOtherAssignments.get(0);
-                throw new IllegalArgumentException(
+                throw new BusinessRuleException(
                         "Nhân sự đã được phân công ở hạng mục khác (" + row[1] + " - Mã " + row[0] + ")."
                 );
             }

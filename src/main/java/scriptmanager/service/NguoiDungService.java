@@ -3,6 +3,8 @@ package scriptmanager.service;
 import scriptmanager.dao.NguoiDungDao;
 import scriptmanager.dao.NguoiDungDaoImpl;
 import scriptmanager.entity.user.NguoiDung;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.util.List;
 
@@ -47,13 +49,13 @@ public class NguoiDungService {
 
     private void validateUsernameForSave(NguoiDung nguoiDung) {
         if (nguoiDung == null || nguoiDung.getTenDangNhap() == null || nguoiDung.getTenDangNhap().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên đăng nhập không được để trống.");
+            throw new ValidationException("Tên đăng nhập không được để trống.");
         }
 
         String normalizedUsername = nguoiDung.getTenDangNhap().trim();
         NguoiDung existed = nguoiDungDao.findByUsername(normalizedUsername);
         if (existed != null) {
-            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại.");
+            throw new BusinessRuleException("Tên đăng nhập đã tồn tại.");
         }
 
         nguoiDung.setTenDangNhap(normalizedUsername);
@@ -61,13 +63,13 @@ public class NguoiDungService {
 
     private void validateUsernameForUpdate(NguoiDung nguoiDung) {
         if (nguoiDung == null || nguoiDung.getTenDangNhap() == null || nguoiDung.getTenDangNhap().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên đăng nhập không được để trống.");
+            throw new ValidationException("Tên đăng nhập không được để trống.");
         }
 
         String normalizedUsername = nguoiDung.getTenDangNhap().trim();
         NguoiDung existed = nguoiDungDao.findByUsername(normalizedUsername);
         if (existed != null && existed.getMaND() != nguoiDung.getMaND()) {
-            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại.");
+            throw new BusinessRuleException("Tên đăng nhập đã tồn tại.");
         }
 
         nguoiDung.setTenDangNhap(normalizedUsername);
