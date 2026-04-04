@@ -3,8 +3,10 @@ package scriptmanager.service;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import scriptmanager.config.HibernateUtil;
+import scriptmanager.config.UserSession;
 import scriptmanager.dao.HangMucKichBanDao;
 import scriptmanager.dao.HangMucKichBanDaoImpl;
+import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.HangMucKichBan;
 
 import java.util.List;
@@ -18,56 +20,78 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
     }
 
     @Override
-    public List<HangMucKichBan> findAll() { 
-        return dao.findAll(); 
+    public List<HangMucKichBan> findAll() {
+        Integer currentUserId = UserSession.getCurrentUserId();
+        if (UserSession.getCurrentRole() == UserRole.USER && currentUserId != null) {
+            return dao.findByNguoiDungId(currentUserId);
+        }
+        return dao.findAll();
     }
 
     @Override
-    public List<HangMucKichBan> findBySuKienId(int suKienId) {
-        return dao.findAll().stream()
-                .filter(hm -> hm.getSuKienTiec() != null && hm.getSuKienTiec().getMaSK() == suKienId)
-                .collect(Collectors.toList());
+    public HangMucKichBan findById(int id) { return dao.findById(id); }
+
+    @Override
+    public void save(HangMucKichBan item) {
+        enforceOwnership(item);
+        validate(item);
+        dao.save(item);
     }
 
     @Override
-    public HangMucKichBan findById(int id) { 
-        return dao.findById(id); 
-    }
-
-    @Override
-    public void save(HangMucKichBan item) { 
-        dao.save(item); 
-    }
-
-    @Override
-    public void update(HangMucKichBan item) { 
-        dao.update(item); 
+    public void update(HangMucKichBan item) {
+        enforceOwnership(item);
+        validate(item);
+        dao.update(item);
     }
 
     @Override
     public void delete(int id) {
-        Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            
-            session.createNativeQuery("DELETE FROM PhanCongNhanSu WHERE MaHM = :id").setParameter("id", id).executeUpdate();
-            session.createNativeQuery("DELETE FROM PhanCongThietBi WHERE MaHM = :id").setParameter("id", id).executeUpdate();
-            session.createNativeQuery("DELETE FROM SuDungDaoCu WHERE MaHM = :id").setParameter("id", id).executeUpdate();
-            session.createNativeQuery("DELETE FROM SuDungHieuUng WHERE MaHM = :id").setParameter("id", id).executeUpdate();
-            
-            try {
-                session.createNativeQuery("DELETE FROM DanhSachNhac WHERE MaHM = :id").setParameter("id", id).executeUpdate();
-            } catch (Exception ignored) {}
-            
-            HangMucKichBan hm = session.get(HangMucKichBan.class, id);
-            if (hm != null) {
-                session.remove(hm);
+        if (UserSession.getCurrentRole() == UserRole.USER) {
+            HangMucKichBan existing = dao.findById(id);
+            Integer currentUserId = UserSession.getCurrentUserId();
+            if (existing == null || existing.getSuKienTiec() == null || existing.getSuKienTiec().getNguoiDung() == null
+                    || currentUserId == null || existing.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
+                throw new SecurityException("Bạn không có quyền xóa hạng mục này.");
             }
-            
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException(e.getMessage(), e);
         }
+        HangMucKichBan item = dao.findById(id);
+        if (item != null) {
+            dao.deleteByIdWithDependencies(id);
+        }
+    }
+
+    private void enforceOwnership(HangMucKichBan item) {
+        if (UserSession.getCurrentRole() != UserRole.USER) {
+            return;
+        }
+
+        Integer currentUserId = UserSession.getCurrentUserId();
+        if (currentUserId == null || item == null || item.getSuKienTiec() == null
+                || item.getSuKienTiec().getNguoiDung() == null
+                || item.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
+            throw new SecurityException("Bạn chỉ có thể thao tác hạng mục của sự kiện do mình phụ trách.");
+        }
+    }
+
+    private void validate(HangMucKichBan item) {
+        if (item == null || item.getSuKienTiec() == null) {
+            throw new IllegalArgumentException("Dữ liệu hạng mục không hợp lệ.");
+        }
+
+        if (item.getTenHM() == null || item.getTenHM().trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên hạng mục không được để trống.");
+        }
+
+        if (item.getTgBatDau() == null || item.getTgKetThuc() == null) {
+            throw new IllegalArgumentException("Thời gian bắt đầu và kết thúc không được để trống.");
+        }
+
+        if (!item.getTgBatDau().isBefore(item.getTgKetThuc())) {
+            throw new IllegalArgumentException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+        }
+
+        item.setTenHM(item.getTenHM().trim());
+        item.setNoiDung(item.getNoiDung() == null ? "" : item.getNoiDung().trim());
     }
 }

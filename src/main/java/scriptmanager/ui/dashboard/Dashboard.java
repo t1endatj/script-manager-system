@@ -2,6 +2,7 @@ package scriptmanager.ui.dashboard;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;
+import scriptmanager.enums.UserRole;
 import scriptmanager.dto.DashboardResourceAlertDTO;
 import scriptmanager.dto.DashboardStatsDTO;
 import scriptmanager.dto.DashboardTaskItemDTO;
@@ -14,7 +15,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,6 @@ public class Dashboard extends JPanel {
     private static final Color TONE_800 = new Color(35, 35, 35);
     private static final Color TONE_700 = new Color(82, 82, 82);
     private static final Color TONE_500 = new Color(120, 120, 120);
-    private static final Color TONE_200 = new Color(224, 224, 224);
     private static final Color BG_SOFT = new Color(245, 247, 250);
     private static final Color TEXT_DARK = new Color(24, 24, 24);
 
@@ -92,60 +91,34 @@ public class Dashboard extends JPanel {
         left.add(title);
         left.add(subtitle);
 
-        JPanel right = new JPanel(new MigLayout("wrap,insets 0,align right", "[]", "[]"));
+        JPanel right = new JPanel(new MigLayout("wrap,insets 0,align right,gap 6", "[]", "[]"));
         right.setOpaque(false);
+
+        UserRole role = mainFrame.getCurrentUser() == null
+                ? UserRole.USER
+                : UserRole.fromDb(mainFrame.getCurrentUser().getQuyenHan());
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         JLabel date = new JLabel("Ngày " + LocalDate.now().format(formatter));
         date.setFont(new Font("Segoe UI", Font.BOLD, 13));
         date.setForeground(TEXT_DARK);
 
-        JButton hmManager = new JButton("QL Kịch Bản");
-        hmManager.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;" +
-                "background:#F3F4F6;" +
-                "foreground:#111111;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
+        JButton hmManager = createHeaderButton("QL Kịch Bản");
         hmManager.addActionListener(e -> mainFrame.showHangMucManager());
 
-        JButton eventManager = new JButton("QL Sự Kiện");
-        eventManager.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;" +
-                "background:#F3F4F6;" +
-                "foreground:#111111;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
+        JButton eventManager = createHeaderButton("QL Sự Kiện");
         eventManager.addActionListener(e -> mainFrame.showSuKienManager());
 
-        JButton userManager = new JButton("QL Người Dùng");
-        userManager.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;" +
-                "background:#F3F4F6;" +
-                "foreground:#111111;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
+        JButton userManager = createHeaderButton("QL Người Dùng");
         userManager.addActionListener(e -> mainFrame.showUserManager());
 
-        JButton coordinationBoard = new JButton("Bảng điều phối");
-        coordinationBoard.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;" +
-                "background:#F3F4F6;" +
-                "foreground:#111111;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
+        JButton coordinationBoard = createHeaderButton("Bảng điều phối");
         coordinationBoard.addActionListener(e -> mainFrame.showCoordinationManager());
 
-        JButton extendedModules = new JButton("Phân hệ tài nguyên");
-        extendedModules.putClientProperty(FlatClientProperties.STYLE,
-                "arc:12;" +
-                "background:#F3F4F6;" +
-                "foreground:#111111;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
+        JButton extendedModules = createHeaderButton("Phân phối tài nguyên");
         extendedModules.addActionListener(e -> mainFrame.showExtendedModules());
 
-        JButton logout = new JButton("Đăng xuất");
+        JButton logout = createHeaderButton("Đăng xuất");
         logout.putClientProperty(FlatClientProperties.STYLE,
                 "arc:12;" +
                 "background:#F3F4F6;" +
@@ -154,14 +127,29 @@ public class Dashboard extends JPanel {
                         "borderWidth:0");
         logout.addActionListener(e -> mainFrame.logout());
 
-        right.add(date, "align right");
-        
-        JPanel btnPanel = new JPanel(new MigLayout("insets 0, gap 8"));
+        JLabel roleBadge = new JLabel("Vai trò: " + displayRole(role));
+        roleBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        roleBadge.setForeground(TEXT_DARK);
+        roleBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
+        roleBadge.putClientProperty(FlatClientProperties.STYLE,
+                "arc:999;" +
+                        "background:#F3F4F6;" +
+                        "border:1,1,1,1,#D1D5DB");
+
+        JPanel meta = new JPanel(new MigLayout("insets 0,gap 8,align right", "[][]", "[]"));
+        meta.setOpaque(false);
+        meta.add(roleBadge);
+        meta.add(date);
+        right.add(meta, "align right");
+
+        JPanel btnPanel = new JPanel(new MigLayout("insets 0,gap 8,align right", "[]", "[]"));
         btnPanel.setOpaque(false);
         btnPanel.add(hmManager, "h 34!");
         btnPanel.add(eventManager, "h 34!");
+        setModuleAccess(userManager, role == UserRole.ADMIN, "Chỉ ADMIN mới có quyền quản lý người dùng.");
         btnPanel.add(userManager, "h 34!");
         btnPanel.add(coordinationBoard, "h 34!");
+        setModuleAccess(extendedModules, role != UserRole.USER, "USER không có quyền truy cập phân phối tài nguyên.");
         btnPanel.add(extendedModules, "h 34!");
         btnPanel.add(logout, "w 110!,h 34!");
         
@@ -171,6 +159,47 @@ public class Dashboard extends JPanel {
         panel.add(right, "align right");
 
         return panel;
+    }
+
+    private JButton createHeaderButton(String text) {
+        JButton button = new JButton(text);
+        button.putClientProperty(FlatClientProperties.STYLE,
+                "arc:12;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        return button;
+    }
+
+    private void setModuleAccess(JButton button, boolean allowed, String deniedTip) {
+        button.setEnabled(allowed);
+        if (allowed) {
+            button.setToolTipText(null);
+            button.putClientProperty(FlatClientProperties.STYLE,
+                    "arc:12;" +
+                            "background:#F3F4F6;" +
+                            "foreground:#111111;" +
+                            "focusWidth:0;" +
+                            "borderWidth:0");
+            return;
+        }
+
+        button.setToolTipText(deniedTip);
+        button.putClientProperty(FlatClientProperties.STYLE,
+                "arc:12;" +
+                        "background:#E5E7EB;" +
+                        "foreground:#9CA3AF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+    }
+
+    private String displayRole(UserRole role) {
+        return switch (role) {
+            case ADMIN -> "ADMIN";
+            case MANAGER -> "MANAGER";
+            default -> "USER";
+        };
     }
 
     private JPanel createMetricsRow() {
@@ -236,11 +265,11 @@ public class Dashboard extends JPanel {
     }
 
     private JPanel createTimelinePanel() {
-        JPanel panel = createSectionPanel("Lịch tổng duyệt gần nhất", "Ưu tiên xử lý theo khung giờ");
+        JPanel panel = createSectionPanel("Lịch tổng duyệt trong ngày", "Theo dõi các mốc tổng duyệt diễn ra hôm nay");
 
         DefaultListModel<String> model = new DefaultListModel<>();
         if (timelineItems.isEmpty()) {
-            model.addElement("Chưa có dữ liệu lịch tổng duyệt");
+            model.addElement("Hôm nay chưa có lịch tổng duyệt");
         } else {
             for (DashboardTimelineItemDTO item : timelineItems) {
                 String timeText = item.getThoiGianDuyet() == null
@@ -309,10 +338,10 @@ public class Dashboard extends JPanel {
     }
 
     private JPanel createWarningPanel() {
-        JPanel panel = createSectionPanel("Cảnh báo tài nguyên", "Kiểm soát tồn kho và phân công");
+        JPanel panel = createSectionPanel("Cảnh báo tài nguyên", "Dựa trên dữ liệu phân phối tài nguyên");
 
         if (resourceAlerts.isEmpty()) {
-            panel.add(createWarningItem("Chưa có cảnh báo", "Dữ liệu thiết bị chưa sẵn sàng", 0, TONE_500), "growx");
+            panel.add(createWarningItem("Chưa có cảnh báo", "Chưa có dữ liệu phân phối tài nguyên", 0, TONE_500), "growx");
         } else {
             for (int i = 0; i < resourceAlerts.size(); i++) {
                 DashboardResourceAlertDTO alert = resourceAlerts.get(i);

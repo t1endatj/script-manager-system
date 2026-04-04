@@ -22,14 +22,17 @@ public class NhanSuService {
     }
 
     public void save(NhanSu item) {
+        AuthorizationService.requireManagerOrAdmin();
         nhanSuDao.save(item);
     }
 
     public void update(NhanSu item) {
+        AuthorizationService.requireManagerOrAdmin();
         nhanSuDao.update(item);
     }
 
     public void delete(int id) {
+        AuthorizationService.requireManagerOrAdmin();
         NhanSu item = nhanSuDao.findById(id);
         if (item != null) {
             nhanSuDao.delete(item);
