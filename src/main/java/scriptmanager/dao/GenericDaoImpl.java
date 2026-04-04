@@ -3,7 +3,6 @@ package scriptmanager.dao;
 import scriptmanager.config.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-
 import java.io.Serializable;
 import java.util.List;
 
@@ -33,7 +32,7 @@ public abstract class GenericDaoImpl<T, ID extends Serializable> implements Gene
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            session.persist(entity);
+            session.merge(entity); // Sửa thành merge để hỗ trợ lưu cùng với khóa ngoại detached
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
@@ -46,7 +45,7 @@ public abstract class GenericDaoImpl<T, ID extends Serializable> implements Gene
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            session.merge(entity);
+            session.merge(entity); // Bắt buộc dùng merge để cập nhật
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();

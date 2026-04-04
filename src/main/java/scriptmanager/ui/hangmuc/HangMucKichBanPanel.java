@@ -41,16 +41,22 @@ public class HangMucKichBanPanel extends JPanel {
     private JTextArea txtNoiDung;
     private JComboBox<SuKienItem> cbSuKien;
     private Integer currentId = null;
+    private Integer filterEventId = null;
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    public HangMucKichBanPanel(MainFrame mainFrame) {
+    public HangMucKichBanPanel(MainFrame mainFrame, Integer filterEventId) {
         this.mainFrame = mainFrame;
+        this.filterEventId = filterEventId;
         this.hangMucService = new HangMucKichBanServiceImpl();
         this.suKienTiecService = new SuKienTiecServiceImpl();
         init();
         loadSuKien();
         loadData();
+    }
+
+    public HangMucKichBanPanel(MainFrame mainFrame) {
+        this(mainFrame, null);
     }
 
     private void init() {
@@ -73,15 +79,22 @@ public class HangMucKichBanPanel extends JPanel {
         panel.setBackground(TONE_900);
         panel.putClientProperty(FlatClientProperties.STYLE, "arc:24");
 
-        JLabel title = new JLabel("Quản Lý Hạng Mục Kịch Bản");
+        String titleText = filterEventId != null ? "Kịch Bản Của Sự Kiện" : "Quản Lý Hạng Mục Kịch Bản";
+        JLabel title = new JLabel(titleText);
         title.setFont(new Font("Segoe UI", Font.BOLD, 26));
         title.setForeground(Color.WHITE);
         panel.add(title, "growx");
 
-        JButton btnBack = new JButton("Quay lại Dashboard");
+        JButton btnBack = new JButton(filterEventId != null ? "Quay Lại Sự Kiện" : "Quay lại Dashboard");
         btnBack.putClientProperty(FlatClientProperties.STYLE,
                 "arc:12;background:#F3F4F6;foreground:#111111;focusWidth:0;borderWidth:0");
-        btnBack.addActionListener(e -> mainFrame.showDashboard());
+        btnBack.addActionListener(e -> {
+            if (filterEventId != null) {
+                mainFrame.showSuKienManager();
+            } else {
+                mainFrame.showDashboard();
+            }
+        });
         panel.add(btnBack, "w 150!,h 34!");
 
         return panel;
@@ -178,7 +191,7 @@ public class HangMucKichBanPanel extends JPanel {
         panel.add(lblNoiDung);
         panel.add(scrollNoiDung, "growx, h 100!");
 
-        JButton btnSave = new JButton("Lưu Mới (Thêm)");
+        JButton btnSave = new JButton("Lưu Mới");
         btnSave.putClientProperty(FlatClientProperties.STYLE, "background:#22C55E;foreground:#FFFFFF;arc:12;focusWidth:0");
 
         JButton btnUpdate = new JButton("Cập Nhật");
@@ -190,6 +203,18 @@ public class HangMucKichBanPanel extends JPanel {
         JButton btnClear = new JButton("Làm Mới");
         btnClear.putClientProperty(FlatClientProperties.STYLE, "background:#F3F4F6;foreground:#111111;arc:12;focusWidth:0");
 
+        JButton btnPhanCong = new JButton("Phân Công");
+        btnPhanCong.putClientProperty(FlatClientProperties.STYLE, "background:#8B5CF6;foreground:#FFFFFF;arc:12;focusWidth:0");
+        btnPhanCong.addActionListener(e -> {
+            if (currentId == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn hạng mục trước!");
+                return;
+            }
+            Window window = SwingUtilities.getWindowAncestor(this);
+            PhanCongDialog dialog = new PhanCongDialog(window, currentId);
+            dialog.setVisible(true);
+        });
+
         btnSave.addActionListener(e -> saveHM());
         btnUpdate.addActionListener(e -> updateHM());
         btnDelete.addActionListener(e -> deleteHM());
@@ -200,8 +225,9 @@ public class HangMucKichBanPanel extends JPanel {
         buttons1.add(btnSave, "growx, h 34!");
         buttons1.add(btnUpdate, "growx, h 34!");
 
-        JPanel buttons2 = new JPanel(new MigLayout("insets 0, gap 8", "[grow][grow]", "[]"));
+        JPanel buttons2 = new JPanel(new MigLayout("insets 0, gap 8", "[grow][grow][grow]", "[]"));
         buttons2.setOpaque(false);
+        buttons2.add(btnPhanCong, "growx, h 34!");
         buttons2.add(btnDelete, "growx, h 34!");
         buttons2.add(btnClear, "growx, h 34!");
 
@@ -226,6 +252,9 @@ public class HangMucKichBanPanel extends JPanel {
                     for (SuKienTiec sk : list) {
                         cbSuKien.addItem(new SuKienItem(sk.getMaSK(), sk.getTenSuKien()));
                     }
+                    if (filterEventId != null) {
+                        selectEvent(filterEventId);
+                    }
                 } catch (Exception ex) {
                     LOGGER.log(Level.WARNING, "Lỗi tải danh sách sự kiện cho combobox hạng mục", ex);
                 }
@@ -237,6 +266,9 @@ public class HangMucKichBanPanel extends JPanel {
         new SwingWorker<List<HangMucKichBan>, Void>() {
             @Override
             protected List<HangMucKichBan> doInBackground() {
+                if (filterEventId != null) {
+                    return hangMucService.findBySuKienId(filterEventId);
+                }
                 return hangMucService.findAll();
             }
 
@@ -310,7 +342,11 @@ public class HangMucKichBanPanel extends JPanel {
         dtTgBatDau.setDateTimePermissive(LocalDateTime.now());
         dtTgKetThuc.setDateTimePermissive(LocalDateTime.now());
         txtNoiDung.setText("");
-        if (cbSuKien.getItemCount() > 0) cbSuKien.setSelectedIndex(0);
+        if (filterEventId != null) {
+            selectEvent(filterEventId);
+        } else if (cbSuKien.getItemCount() > 0) {
+            cbSuKien.setSelectedIndex(0);
+        }
         table.clearSelection();
     }
 
@@ -455,7 +491,45 @@ public class HangMucKichBanPanel extends JPanel {
         }
     }
 
-    // Lớp phụ dùng hiển thị SuKien combobox
+    public void selectEvent(Integer eventId) {
+        SwingUtilities.invokeLater(() -> {
+            for (int i = 0; i < cbSuKien.getItemCount(); i++) {
+                Object item = cbSuKien.getItemAt(i);
+                if (item != null) {
+                    try {
+                        java.lang.reflect.Method method = item.getClass().getMethod("getId");
+                        Integer id = (Integer) method.invoke(item);
+                        if (eventId.equals(id)) {
+                            cbSuKien.setSelectedIndex(i);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        try {
+                            java.lang.reflect.Method method = item.getClass().getMethod("getMaSK");
+                            Integer id = (Integer) method.invoke(item);
+                            if (eventId.equals(id)) {
+                                cbSuKien.setSelectedIndex(i);
+                                break;
+                            }
+                        } catch (Exception ex) {}
+                    }
+                }
+            }
+        });
+    }
+
+    public void selectAndEdit(Integer hangMucId) {
+        SwingUtilities.invokeLater(() -> {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                if (tableModel.getValueAt(i, 0).equals(hangMucId)) {
+                    table.setRowSelectionInterval(i, i);
+                    fillForm(i);
+                    break;
+                }
+            }
+        });
+    }
+
     private static class SuKienItem {
         int id;
         String name;
@@ -463,6 +537,10 @@ public class HangMucKichBanPanel extends JPanel {
         SuKienItem(int id, String name) {
             this.id = id;
             this.name = name;
+        }
+
+        public int getId() {
+            return id;
         }
 
         @Override

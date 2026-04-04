@@ -74,10 +74,28 @@ public class MainFrame extends JFrame {
         repaint();
     }
 
-    public void showHangMucManager() {
-        setContentPane(new HangMucKichBanPanel(this));
+    public void showHangMucManagerForEvent(Integer eventId) {
+        scriptmanager.ui.hangmuc.HangMucKichBanPanel panel = new scriptmanager.ui.hangmuc.HangMucKichBanPanel(this, eventId);
+        setContentPane(panel);
         revalidate();
         repaint();
+        if (eventId != null) {
+            panel.selectEvent(eventId);
+        }
+    }
+
+    public void showHangMucManager() {
+        showHangMucManager(null);
+    }
+
+    public void showHangMucManager(Integer hangMucId) {
+        scriptmanager.ui.hangmuc.HangMucKichBanPanel panel = new scriptmanager.ui.hangmuc.HangMucKichBanPanel(this, null);
+        setContentPane(panel);
+        revalidate();
+        repaint();
+        if (hangMucId != null) {
+            panel.selectAndEdit(hangMucId);
+        }
     }
 
     public void showCoordinationManager() {

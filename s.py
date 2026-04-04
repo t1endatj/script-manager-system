@@ -1,95 +1,83 @@
 import os
 
-base_path = "src/main/java/scriptmanager/service"
+files_to_write = {
+    "src/main/java/scriptmanager/service/HangMucKichBanServiceImpl.java": """package scriptmanager.service;
 
-coordination_service_content = """package scriptmanager.service;
-
-import java.util.List;
-import java.util.Map;
-
-public interface CoordinationService {
-    List<Map<String, Object>> getFullSchedule();
-    List<Map<String, Object>> getResourceUsageByTime();
-}
-"""
-
-coordination_impl_content = """package scriptmanager.service;
-
-import scriptmanager.config.HibernateUtil;
 import org.hibernate.Session;
-import org.hibernate.query.Query;
-import java.util.ArrayList;
-import java.util.HashMap;
+import org.hibernate.Transaction;
+import scriptmanager.config.HibernateUtil;
+import scriptmanager.dao.HangMucKichBanDao;
+import scriptmanager.dao.HangMucKichBanDaoImpl;
+import scriptmanager.entity.core.HangMucKichBan;
+
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-public class CoordinationServiceImpl implements CoordinationService {
+public class HangMucKichBanServiceImpl implements HangMucKichBanService {
+    private final HangMucKichBanDao dao;
 
-    @Override
-    public List<Map<String, Object>> getFullSchedule() {
-        List<Map<String, Object>> boardData = new ArrayList<>();
-        
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "SELECT hm.tenHM, hm.tgBatDau, hm.tgKetThuc, " +
-                         "(SELECT COUNT(pcns) FROM hm.phanCongNhanSus pcns), " +
-                         "(SELECT COUNT(pctb) FROM hm.phanCongThietBis pctb) " +
-                         "FROM HangMucKichBan hm " +
-                         "ORDER BY hm.tgBatDau ASC";
-
-            Query<Object[]> query = session.createQuery(hql, Object[].class);
-            List<Object[]> results = query.list();
-
-            for (Object[] row : results) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("tenHangMuc", row[0]);
-                item.put("batDau", row[1]);
-                item.put("ketThuc", row[2]);
-                item.put("soNhanSu", row[3]);
-                item.put("soThietBi", row[4]);
-                boardData.add(item);
-            }
-        }
-        return boardData;
+    public HangMucKichBanServiceImpl() {
+        this.dao = new HangMucKichBanDaoImpl();
     }
 
     @Override
-    public List<Map<String, Object>> getResourceUsageByTime() {
-        List<Map<String, Object>> usageData = new ArrayList<>();
-        
+    public List<HangMucKichBan> findAll() { 
+        return dao.findAll(); 
+    }
+
+    @Override
+    public List<HangMucKichBan> findBySuKienId(int suKienId) {
+        return dao.findAll().stream()
+                .filter(hm -> hm.getSuKienTiec() != null && hm.getSuKienTiec().getMaSK() == suKienId)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public HangMucKichBan findById(int id) { 
+        return dao.findById(id); 
+    }
+
+    @Override
+    public void save(HangMucKichBan item) { 
+        dao.save(item); 
+    }
+
+    @Override
+    public void update(HangMucKichBan item) { 
+        dao.update(item); 
+    }
+
+    @Override
+    public void delete(int id) {
+        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "SELECT ns.tenNS, hm.tenHM, hm.tgBatDau, hm.tgKetThuc " +
-                         "FROM PhanCongNhanSu pc " +
-                         "JOIN pc.nhanSu ns " +
-                         "JOIN pc.hangMuc hm " +
-                         "ORDER BY ns.tenNS, hm.tgBatDau";
-
-            Query<Object[]> query = session.createQuery(hql, Object[].class);
-            List<Object[]> results = query.list();
-
-            for (Object[] row : results) {
-                Map<String, Object> usage = new HashMap<>();
-                usage.put("tenNhanSu", row[0]);
-                usage.put("tenHangMuc", row[1]);
-                usage.put("thoiGian", row[2] + " - " + row[3]);
-                usageData.add(usage);
+            tx = session.beginTransaction();
+            
+            session.createNativeQuery("DELETE FROM PhanCongNhanSu WHERE MaHM = :id").setParameter("id", id).executeUpdate();
+            session.createNativeQuery("DELETE FROM PhanCongThietBi WHERE MaHM = :id").setParameter("id", id).executeUpdate();
+            session.createNativeQuery("DELETE FROM SuDungDaoCu WHERE MaHM = :id").setParameter("id", id).executeUpdate();
+            session.createNativeQuery("DELETE FROM SuDungHieuUng WHERE MaHM = :id").setParameter("id", id).executeUpdate();
+            
+            try {
+                session.createNativeQuery("DELETE FROM DanhSachNhac WHERE MaHM = :id").setParameter("id", id).executeUpdate();
+            } catch (Exception ignored) {}
+            
+            HangMucKichBan hm = session.get(HangMucKichBan.class, id);
+            if (hm != null) {
+                session.remove(hm);
             }
+            
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException(e.getMessage(), e);
         }
-        return usageData;
     }
 }
 """
+}
 
-def generate_coordination_logic():
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    
-    with open(os.path.join(base_path, "CoordinationService.java"), "w", encoding="utf-8") as f:
-        f.write(coordination_service_content)
-        
-    with open(os.path.join(base_path, "CoordinationServiceImpl.java"), "w", encoding="utf-8") as f:
-        f.write(coordination_impl_content)
-        
-    print("Coordination files generated successfully.")
-
-if __name__ == "__main__":
-    generate_coordination_logic()
+for file_path, content in files_to_write.items():
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)

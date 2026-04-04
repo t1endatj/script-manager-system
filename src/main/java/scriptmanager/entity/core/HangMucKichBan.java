@@ -73,8 +73,6 @@ public class HangMucKichBan {
         this.setSuKienTiec(suKienTiec);
     }
 
-    //Helper method
-
     //PhanCongNhanSu
     public void addPhanCongNhanSu(PhanCongNhanSu pc) {
         phanCongNhanSus.add(pc);
@@ -82,8 +80,8 @@ public class HangMucKichBan {
     }
 
     public void removePhanCongNhanSu(PhanCongNhanSu pc) {
-            phanCongNhanSus.remove(pc);
-            pc.setHangMuc(null);
+        phanCongNhanSus.remove(pc);
+        pc.setHangMuc(null);
     }
 
     //PhanCongThietBi
@@ -93,8 +91,8 @@ public class HangMucKichBan {
     }
 
     public void removePhanCongThietBi(PhanCongThietBi pc) {
-            phanCongThietBis.remove(pc);
-            pc.setHangMuc(null);
+        phanCongThietBis.remove(pc);
+        pc.setHangMuc(null);
     }
 
     //SuDungDaoCu
@@ -104,8 +102,8 @@ public class HangMucKichBan {
     }
 
     public void removeSuDungDaoCu(SuDungDaoCu sd) {
-            suDungDaoCus.remove(sd);
-            sd.setHangMuc(null);
+        suDungDaoCus.remove(sd);
+        sd.setHangMuc(null);
     }
 
     //SuDungHieuUng
@@ -115,8 +113,8 @@ public class HangMucKichBan {
     }
 
     public void removeSuDungHieuUng(SuDungHieuUng sd) {
-            suDungHieuUngs.remove(sd);
-            sd.setHangMuc(null);
+        suDungHieuUngs.remove(sd);
+        sd.setHangMuc(null);
     }
 
     //DanhSachNhac
@@ -126,13 +124,11 @@ public class HangMucKichBan {
     }
 
     public void removeDanhSachNhac(DanhSachNhac nhac) {
-            danhSachNhacs.remove(nhac);
-            nhac.setHangMuc(null);
+        danhSachNhacs.remove(nhac);
+        nhac.setHangMuc(null);
     }
 
-
     //Getter và Setter
-
     public int getMaHM() {
         return maHM;
     }
@@ -178,7 +174,7 @@ public class HangMucKichBan {
     }
 
     public void setSuKienTiec(SuKienTiec suKienTiec) {
-        // Keep owning side assignment only to avoid triggering lazy collections on detached entities.
+        // Đã xóa phần code gây lỗi LazyInitializationException
         this.suKienTiec = suKienTiec;
     }
 

@@ -178,6 +178,16 @@ public class SuKienTiecPanel extends JPanel {
         JButton btnClear = new JButton("Làm Mới");
         btnClear.putClientProperty(FlatClientProperties.STYLE, "background:#F3F4F6;foreground:#111111;arc:12;focusWidth:0");
 
+        JButton btnKichBan = new JButton("Kịch Bản");
+        btnKichBan.putClientProperty(FlatClientProperties.STYLE, "background:#10B981;foreground:#FFFFFF;arc:12;focusWidth:0");
+        btnKichBan.addActionListener(e -> {
+            if (currentId == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một sự kiện để quản lý kịch bản!");
+                return;
+            }
+            mainFrame.showHangMucManagerForEvent(currentId);
+        });
+
         btnSave.addActionListener(e -> saveEvent());
         btnUpdate.addActionListener(e -> updateEvent());
         btnDelete.addActionListener(e -> deleteEvent());
@@ -188,8 +198,9 @@ public class SuKienTiecPanel extends JPanel {
         buttons1.add(btnSave, "growx, h 34!");
         buttons1.add(btnUpdate, "growx, h 34!");
 
-        JPanel buttons2 = new JPanel(new MigLayout("insets 0, gap 8", "[grow][grow]", "[]"));
+        JPanel buttons2 = new JPanel(new MigLayout("insets 0, gap 8", "[grow][grow][grow]", "[]"));
         buttons2.setOpaque(false);
+        buttons2.add(btnKichBan, "growx, h 34!");
         buttons2.add(btnDelete, "growx, h 34!");
         buttons2.add(btnClear, "growx, h 34!");
 
@@ -292,9 +303,9 @@ public class SuKienTiecPanel extends JPanel {
         table.clearSelection();
     }
 
-    private void saveEvent() {
+   private void saveEvent() {
         String ten = txtTenSuKien.getText().trim();
-        LocalDateTime time = dtThoiGian.getDateTimeStrict();
+        LocalDateTime time = dtThoiGian.getDateTimePermissive();
         String dia = txtDiaDiem.getText().trim();
         NguoiDungItem ndItem = (NguoiDungItem) cbNguoiDung.getSelectedItem();
 
@@ -307,7 +318,11 @@ public class SuKienTiecPanel extends JPanel {
             @Override
             protected Void doInBackground() throws Exception {
                 NguoiDung nd = nguoiDungService.getById(ndItem.id);
-                SuKienTiec sk = new SuKienTiec(ten, time, dia, nd);
+                SuKienTiec sk = new SuKienTiec();
+                sk.setTenSuKien(ten);
+                sk.setThoiGianToChuc(time);
+                sk.setDiaDiem(dia);
+                sk.setNguoiDung(nd);
                 suKienTiecService.save(sk);
                 return null;
             }
@@ -320,6 +335,8 @@ public class SuKienTiecPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, "Lỗi: " + ex.getMessage());
                     JOptionPane.showMessageDialog(SuKienTiecPanel.this, resolveErrorMessage(ex));
                 }
             }
@@ -333,7 +350,7 @@ public class SuKienTiecPanel extends JPanel {
         }
 
         String ten = txtTenSuKien.getText().trim();
-        LocalDateTime time = dtThoiGian.getDateTimeStrict();
+        LocalDateTime time = dtThoiGian.getDateTimePermissive();
         String dia = txtDiaDiem.getText().trim();
         NguoiDungItem ndItem = (NguoiDungItem) cbNguoiDung.getSelectedItem();
 

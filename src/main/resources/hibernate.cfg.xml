@@ -29,7 +29,8 @@
         <mapping class="scriptmanager.entity.assignment.PhanCongNhanSu"/>
         <mapping class="scriptmanager.entity.assignment.PhanCongThietBi"/>
         <mapping class="scriptmanager.entity.assignment.SuDungDaoCu"/>
+        <mapping class="scriptmanager.entity.core.SuKienTiec" />
         <mapping class="scriptmanager.entity.assignment.SuDungHieuUng"/>
         
-    </session-factory>
+        </session-factory>
 </hibernate-configuration>

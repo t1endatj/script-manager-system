@@ -1,5 +1,8 @@
 package scriptmanager.service;
 
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import scriptmanager.config.HibernateUtil;
 import scriptmanager.config.UserSession;
 import scriptmanager.dao.HangMucKichBanDao;
 import scriptmanager.dao.HangMucKichBanDaoImpl;
@@ -7,6 +10,7 @@ import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.HangMucKichBan;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HangMucKichBanServiceImpl implements HangMucKichBanService {
     private final HangMucKichBanDao dao;
