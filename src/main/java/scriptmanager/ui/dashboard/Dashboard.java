@@ -266,6 +266,40 @@ public class Dashboard extends JPanel {
             "selectionBackground:#E5E7EB;" +
                 "selectionForeground:#111111");
 
+        list.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        list.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = list.locationToIndex(e.getPoint());
+                    if (index >= 0 && index < timelineItems.size()) {
+                        try {
+                            Integer hmId = (Integer) timelineItems.get(index).getClass().getMethod("getMaHM").invoke(timelineItems.get(index));
+                            mainFrame.showHangMucManager(hmId);
+                        } catch (Exception ex) {
+                            mainFrame.showHangMucManager();
+                        }
+                    }
+                }
+            }
+        });
+
+        list.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        list.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = list.locationToIndex(e.getPoint());
+                    if (index >= 0 && index < timelineItems.size()) {
+                        try {
+                            Integer hmId = (Integer) timelineItems.get(index).getClass().getMethod("getMaHM").invoke(timelineItems.get(index));
+                            mainFrame.showHangMucManager(hmId);
+                        } catch (Exception ex) {
+                            mainFrame.showHangMucManager();
+                        }
+                    }
+                }
+            }
+        });
+
         JScrollPane sp = new JScrollPane(list);
         sp.setBorder(new EmptyBorder(0, 0, 0, 0));
         sp.getViewport().setBackground(Color.WHITE);
@@ -338,6 +372,20 @@ public class Dashboard extends JPanel {
         progressBar.setBackground(new Color(229, 231, 235));
         progressBar.setBorderPainted(false);
 
+        item.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        item.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                mainFrame.showExtendedModules();
+            }
+        });
+
+        item.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        item.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                mainFrame.showExtendedModules();
+            }
+        });
+
         item.add(lbName, "split 2");
         item.add(lbStatus, "align right");
         item.add(progressBar, "growx");
@@ -382,6 +430,40 @@ public class Dashboard extends JPanel {
         table.getTableHeader().setForeground(TONE_900);
         table.setGridColor(new Color(229, 231, 235));
         table.setShowVerticalLines(false);
+
+        table.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = table.getSelectedRow();
+                    if (row >= 0 && row < taskItems.size()) {
+                        try {
+                            Integer hmId = (Integer) taskItems.get(row).getClass().getMethod("getMaHM").invoke(taskItems.get(row));
+                            mainFrame.showHangMucManager(hmId);
+                        } catch (Exception ex) {
+                            mainFrame.showHangMucManager();
+                        }
+                    }
+                }
+            }
+        });
+
+        table.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = table.getSelectedRow();
+                    if (row >= 0 && row < taskItems.size()) {
+                        try {
+                            Integer hmId = (Integer) taskItems.get(row).getClass().getMethod("getMaHM").invoke(taskItems.get(row));
+                            mainFrame.showHangMucManager(hmId);
+                        } catch (Exception ex) {
+                            mainFrame.showHangMucManager();
+                        }
+                    }
+                }
+            }
+        });
 
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(new EmptyBorder(0, 0, 0, 0));

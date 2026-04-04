@@ -1,8 +1,11 @@
 package scriptmanager.service;
+
 import scriptmanager.entity.core.HangMucKichBan;
 import java.util.List;
+
 public interface HangMucKichBanService {
     List<HangMucKichBan> findAll();
+    List<HangMucKichBan> findBySuKienId(int suKienId);
     HangMucKichBan findById(int id);
     void save(HangMucKichBan item);
     void update(HangMucKichBan item);
