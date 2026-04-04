@@ -3,6 +3,7 @@ package scriptmanager.service;
 import scriptmanager.dao.ThietBiDao;
 import scriptmanager.dao.ThietBiDaoImpl;
 import scriptmanager.entity.asset.ThietBi;
+import scriptmanager.exception.BusinessRuleException;
 
 import java.util.List;
 
@@ -35,7 +36,10 @@ public class ThietBiService {
         AuthorizationService.requireManagerOrAdmin();
         ThietBi item = thietBiDao.findById(id);
         if (item != null) {
-            thietBiDao.delete(item);
+            if (thietBiDao.hasAssignments(id)) {
+                throw new BusinessRuleException("Không thể xóa thiết bị đang được phân bổ. Vui lòng gỡ phân bổ trước.");
+            }
+            thietBiDao.deleteById(id);
         }
     }
 }

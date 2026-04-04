@@ -60,13 +60,11 @@ public class PhanCongNhanSu {
     }
 
     public void setHangMuc(HangMucKichBan hangMuc) {
-        if (this.hangMuc != null) {
-            this.hangMuc.getPhanCongNhanSus().remove(this);
-        }
         this.hangMuc = hangMuc;
         if (hangMuc != null) {
-            hangMuc.getPhanCongNhanSus().add(this);
-            if (this.id == null) this.id = new PhanCongNhanSuId();
+            if (this.id == null) {
+                this.id = new PhanCongNhanSuId();
+            }
             this.id.setMaHM(hangMuc.getMaHM());
         }
     }
@@ -76,13 +74,11 @@ public class PhanCongNhanSu {
     }
 
     public void setNhanSu(NhanSu nhanSu) {
-        if (this.nhanSu != null) {
-            this.nhanSu.getPhanCongNhanSus().remove(this);
-        }
         this.nhanSu = nhanSu;
         if (nhanSu != null) {
-            nhanSu.getPhanCongNhanSus().add(this);
-            if (this.id == null) this.id = new PhanCongNhanSuId();
+            if (this.id == null) {
+                this.id = new PhanCongNhanSuId();
+            }
             this.id.setMaNS(nhanSu.getMaNS());
         }
     }

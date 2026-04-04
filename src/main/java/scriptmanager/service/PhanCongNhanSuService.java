@@ -10,6 +10,7 @@ import scriptmanager.entity.user.NhanSu;
 import scriptmanager.exception.BusinessRuleException;
 import scriptmanager.exception.ValidationException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,15 +106,28 @@ public class PhanCongNhanSuService {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
 
-            NhanSu nhanSu = session.get(NhanSu.class, maNS);
-            if (nhanSu == null) {
+            Long nhanSuCount = session.createQuery(
+                            "select count(ns.maNS) from NhanSu ns where ns.maNS = :maNS",
+                            Long.class)
+                    .setParameter("maNS", maNS)
+                    .uniqueResult();
+            if (nhanSuCount == null || nhanSuCount == 0) {
                 throw new ValidationException("Không tìm thấy nhân sự.");
             }
 
-            HangMucKichBan hangMuc = session.get(HangMucKichBan.class, maHM);
-            if (hangMuc == null || hangMuc.getSuKienTiec() == null || hangMuc.getSuKienTiec().getMaSK() != maSK) {
+            Object[] hangMucInfo = session.createQuery(
+                            "select hm.tgBatDau, hm.tgKetThuc " +
+                                    "from HangMucKichBan hm " +
+                                    "where hm.maHM = :maHM and hm.suKienTiec.maSK = :maSK",
+                            Object[].class)
+                    .setParameter("maHM", maHM)
+                    .setParameter("maSK", maSK)
+                    .uniqueResult();
+            if (hangMucInfo == null) {
                 throw new ValidationException("Hạng mục không thuộc sự kiện đã chọn.");
             }
+            LocalDateTime targetStart = (LocalDateTime) hangMucInfo[0];
+            LocalDateTime targetEnd = (LocalDateTime) hangMucInfo[1];
 
             // Mỗi hạng mục chỉ cho một người phụ trách chính.
             Long assignedToCurrentHangMuc = session.createQuery(
@@ -127,34 +141,41 @@ public class PhanCongNhanSuService {
                 throw new BusinessRuleException("Hạng mục đã có người phụ trách, không thể phân công thêm.");
             }
 
-            // Nhân sự đã có hạng mục khác thì không nhận thêm.
+            // Nhân sự có thể nhận nhiều hạng mục, chỉ chặn khi trùng giờ.
             List<Object[]> existingOtherAssignments = session.createQuery(
-                            "SELECT pc.hangMuc.maHM, pc.hangMuc.tenHM " +
+                            "SELECT pc.hangMuc.maHM, pc.hangMuc.tenHM, pc.hangMuc.tgBatDau, pc.hangMuc.tgKetThuc " +
                                     "FROM PhanCongNhanSu pc " +
                                     "WHERE pc.nhanSu.maNS = :maNS AND pc.hangMuc.maHM <> :maHM",
                             Object[].class)
                     .setParameter("maNS", maNS)
                     .setParameter("maHM", maHM)
-                    .setMaxResults(1)
                     .list();
-            if (!existingOtherAssignments.isEmpty()) {
-                Object[] row = existingOtherAssignments.get(0);
-                throw new BusinessRuleException(
-                        "Nhân sự đã được phân công ở hạng mục khác (" + row[1] + " - Mã " + row[0] + ")."
-                );
+
+            for (Object[] row : existingOtherAssignments) {
+                LocalDateTime existingStart = (LocalDateTime) row[2];
+                LocalDateTime existingEnd = (LocalDateTime) row[3];
+                if (rangesOverlap(targetStart, targetEnd, existingStart, existingEnd)) {
+                    throw new BusinessRuleException(
+                            "Nhân sự bị trùng lịch với hạng mục " + row[1] + " (Mã " + row[0] + ")."
+                    );
+                }
             }
 
-            // Upsert phân công theo cặp hạng mục - nhân sự.
-            PhanCongNhanSuId id = new PhanCongNhanSuId(maHM, maNS);
-            PhanCongNhanSu existing = session.get(PhanCongNhanSu.class, id);
-            if (existing == null) {
-                PhanCongNhanSu created = new PhanCongNhanSu();
-                created.setHangMuc(hangMuc);
-                created.setNhanSu(nhanSu);
-                created.setNhiemVu(normalizedTask);
-                session.persist(created);
-            } else {
-                existing.setNhiemVu(normalizedTask);
+            // Upsert bằng query để tránh side effect từ entity graph/cascade.
+            int updated = session.createMutationQuery(
+                            "update PhanCongNhanSu pc set pc.nhiemVu = :nhiemVu " +
+                                    "where pc.hangMuc.maHM = :maHM and pc.nhanSu.maNS = :maNS")
+                    .setParameter("nhiemVu", normalizedTask)
+                    .setParameter("maHM", maHM)
+                    .setParameter("maNS", maNS)
+                    .executeUpdate();
+            if (updated == 0) {
+                session.createNativeQuery(
+                                "INSERT INTO PhanCongNhanSu (MaHM, MaNS, NhiemVu) VALUES (:maHM, :maNS, :nhiemVu)")
+                        .setParameter("maHM", maHM)
+                        .setParameter("maNS", maNS)
+                        .setParameter("nhiemVu", normalizedTask)
+                        .executeUpdate();
             }
 
             transaction.commit();
@@ -171,10 +192,11 @@ public class PhanCongNhanSuService {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            PhanCongNhanSu item = session.get(PhanCongNhanSu.class, new PhanCongNhanSuId(maHM, maNS));
-            if (item != null) {
-                session.remove(item);
-            }
+            session.createMutationQuery(
+                            "delete from PhanCongNhanSu pc where pc.hangMuc.maHM = :maHM and pc.nhanSu.maNS = :maNS")
+                    .setParameter("maHM", maHM)
+                    .setParameter("maNS", maNS)
+                    .executeUpdate();
             transaction.commit();
         } catch (Exception ex) {
             if (transaction != null) {
@@ -182,6 +204,14 @@ public class PhanCongNhanSuService {
             }
             throw ex;
         }
+    }
+
+    private boolean rangesOverlap(LocalDateTime startA, LocalDateTime endA,
+                                  LocalDateTime startB, LocalDateTime endB) {
+        if (startA == null || endA == null || startB == null || endB == null) {
+            return false;
+        }
+        return startA.isBefore(endB) && endA.isAfter(startB);
     }
 }
 

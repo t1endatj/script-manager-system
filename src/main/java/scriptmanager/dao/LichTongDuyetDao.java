@@ -6,5 +6,7 @@ import scriptmanager.entity.core.LichTongDuyet;
 
 public interface LichTongDuyetDao extends GenericDao<LichTongDuyet, Integer> {
 	List<LichTongDuyet> findByNguoiDungId(int maNguoiDung);
+
+	void deleteById(int id);
 }
 

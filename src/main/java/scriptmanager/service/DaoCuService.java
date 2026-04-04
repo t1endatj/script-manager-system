@@ -3,6 +3,7 @@ package scriptmanager.service;
 import scriptmanager.dao.DaoCuDao;
 import scriptmanager.dao.DaoCuDaoImpl;
 import scriptmanager.entity.asset.DaoCu;
+import scriptmanager.exception.BusinessRuleException;
 
 import java.util.List;
 
@@ -35,6 +36,9 @@ public class DaoCuService {
         AuthorizationService.requireManagerOrAdmin();
         DaoCu item = daoCuDao.findById(id);
         if (item != null) {
+            if (daoCuDao.hasUsages(id)) {
+                throw new BusinessRuleException("Không thể xóa đạo cụ đang được sử dụng. Vui lòng gỡ phân bổ trước.");
+            }
             daoCuDao.delete(item);
         }
     }

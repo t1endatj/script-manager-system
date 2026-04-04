@@ -20,6 +20,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.event.HierarchyEvent;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -229,9 +230,17 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
                 nhanSuService.delete((int) model.getValueAt(row, 0));
+                JOptionPane.showMessageDialog(this, "Xóa nhân sự thành công.");
+                resetForm.run();
                 load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa nhân sự thất bại: " + ex.getMessage());
             }
         });
 
@@ -266,7 +275,10 @@ public class ExtendedModulePanel extends JPanel {
                         "foreground:#111111;" +
                         "focusWidth:0;" +
                         "borderWidth:0");
-        reset.addActionListener(e -> resetForm.run());
+        reset.addActionListener(e -> {
+            resetForm.run();
+            load.run();
+        });
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -494,9 +506,17 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load,
+        JComponent panel = wrapCrud(table, load,
                 new String[]{"Sự kiện", "Hạng mục thuộc sự kiện", "Nhân sự", "Nhiệm vụ"},
                 new JComponent[]{cbSuKien, cbHangMuc, cbNhanSu, nhiemVu}, assign, delete, update, reset);
+
+        // Khi quay lại tab phân công, nạp lại combo để thấy nhân sự/hạng mục mới thêm.
+        panel.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && panel.isShowing()) {
+                load.run();
+            }
+        });
+        return panel;
     }
 
     private JComponent createThietBiTab() {
@@ -1184,7 +1204,7 @@ public class ExtendedModulePanel extends JPanel {
     }
 
     private JComponent createSuDungDaoCuTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Hạng mục", "Đạo cụ", "Số lượng sử dụng"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã HM", "Hạng mục", "Mã ĐC", "Đạo cụ", "Số lượng sử dụng"}, 0);
         JTable table = new JTable(model);
         JComboBox<IdNameItem> cbHangMuc = new JComboBox<>();
         JComboBox<IdNameItem> cbDaoCu = new JComboBox<>();
@@ -1237,9 +1257,11 @@ public class ExtendedModulePanel extends JPanel {
         Runnable load = () -> {
             model.setRowCount(0);
             for (SuDungDaoCu item : suDungDaoCuService.findAll()) {
+                int maHM = item.getId() != null ? item.getId().getMaHM() : 0;
+                int maDaoCu = item.getId() != null ? item.getId().getMaDaoCu() : 0;
                 String hm = item.getHangMuc() != null ? item.getHangMuc().getTenHM() : "N/A";
                 String dc = item.getDaoCu() != null ? item.getDaoCu().getTenDaoCu() : "N/A";
-                model.addRow(new Object[]{hm, dc, item.getSoLuongSuDung()});
+                model.addRow(new Object[]{maHM, hm, maDaoCu, dc, item.getSoLuongSuDung()});
             }
             loadOptions.run();
         };
@@ -1297,13 +1319,9 @@ public class ExtendedModulePanel extends JPanel {
                 return;
             }
             try {
-                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
-                IdNameItem daoCuItem = (IdNameItem) cbDaoCu.getSelectedItem();
-                if (hangMucItem == null || daoCuItem == null) {
-                    JOptionPane.showMessageDialog(this, "Không xác định được bản ghi cần xóa.");
-                    return;
-                }
-                suDungDaoCuService.delete(new SuDungDaoCuId(hangMucItem.id, daoCuItem.id));
+                int hangMucId = (int) model.getValueAt(row, 0);
+                int daoCuId = (int) model.getValueAt(row, 2);
+                suDungDaoCuService.delete(new SuDungDaoCuId(hangMucId, daoCuId));
                 JOptionPane.showMessageDialog(this, "Xóa sử dụng đạo cụ thành công.");
                 resetForm.run();
                 load.run();
@@ -1316,17 +1334,11 @@ public class ExtendedModulePanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
-                    SuDungDaoCu selected = suDungDaoCuService.findAll().stream()
-                            .filter(x -> x.getHangMuc() != null && x.getDaoCu() != null)
-                            .filter(x -> String.valueOf(model.getValueAt(row, 0)).equals(x.getHangMuc().getTenHM()))
-                            .filter(x -> String.valueOf(model.getValueAt(row, 1)).equals(x.getDaoCu().getTenDaoCu()))
-                            .findFirst()
-                            .orElse(null);
-                    if (selected != null) {
-                        selectComboById(cbHangMuc, selected.getId().getMaHM());
-                        selectComboById(cbDaoCu, selected.getId().getMaDaoCu());
-                        soLuong.setText(String.valueOf(selected.getSoLuongSuDung()));
-                    }
+                    int maHM = (int) model.getValueAt(row, 0);
+                    int maDaoCu = (int) model.getValueAt(row, 2);
+                    selectComboById(cbHangMuc, maHM);
+                    selectComboById(cbDaoCu, maDaoCu);
+                    soLuong.setText(String.valueOf(model.getValueAt(row, 4)));
                 }
             }
         });
