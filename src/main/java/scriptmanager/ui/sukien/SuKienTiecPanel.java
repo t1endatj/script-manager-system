@@ -4,7 +4,6 @@ import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;
 import scriptmanager.entity.core.SuKienTiec;
 import scriptmanager.entity.user.NguoiDung;
-import scriptmanager.service.NguoiDungService;
 import scriptmanager.service.SuKienTiecService;
 import scriptmanager.service.SuKienTiecServiceImpl;
 import scriptmanager.ui.main.MainFrame;
@@ -30,7 +29,6 @@ public class SuKienTiecPanel extends JPanel {
 
     private final MainFrame mainFrame;
     private final SuKienTiecService suKienTiecService;
-    private final NguoiDungService nguoiDungService;
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -38,7 +36,6 @@ public class SuKienTiecPanel extends JPanel {
     private JTextField txtTenSuKien;
     private DateTimePicker dtThoiGian;
     private JTextField txtDiaDiem;
-    private JComboBox<NguoiDungItem> cbNguoiDung;
     private Integer currentId = null;
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -46,9 +43,7 @@ public class SuKienTiecPanel extends JPanel {
     public SuKienTiecPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
         this.suKienTiecService = new SuKienTiecServiceImpl();
-        this.nguoiDungService = new NguoiDungService();
         init();
-        loadUsers();
         loadData();
     }
 
@@ -146,16 +141,12 @@ public class SuKienTiecPanel extends JPanel {
         txtDiaDiem = new JTextField();
         txtDiaDiem.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Địa điểm");
 
-        cbNguoiDung = new JComboBox<>();
-
         JLabel lblTen = new JLabel("Tên:");
         lblTen.setForeground(Color.BLACK);
         JLabel lblThoiGian = new JLabel("Thời gian (dd/MM/yyyy HH:mm):");
         lblThoiGian.setForeground(Color.BLACK);
         JLabel lblDiaDiem = new JLabel("Địa điểm:");
         lblDiaDiem.setForeground(Color.BLACK);
-        JLabel lblPhuTrach = new JLabel("Người Phụ Trách:");
-        lblPhuTrach.setForeground(Color.BLACK);
 
         panel.add(lblTen);
         panel.add(txtTenSuKien, "growx, h 34!");
@@ -163,8 +154,6 @@ public class SuKienTiecPanel extends JPanel {
         panel.add(dtThoiGian, "growx, h 34!");
         panel.add(lblDiaDiem);
         panel.add(txtDiaDiem, "growx, h 34!");
-        panel.add(lblPhuTrach);
-        panel.add(cbNguoiDung, "growx, h 34!");
 
         JButton btnSave = new JButton("Lưu Mới (Thêm)");
         btnSave.putClientProperty(FlatClientProperties.STYLE, "background:#22C55E;foreground:#FFFFFF;arc:12;focusWidth:0");
@@ -208,28 +197,6 @@ public class SuKienTiecPanel extends JPanel {
         panel.add(buttons2, "growx");
 
         return panel;
-    }
-
-    private void loadUsers() {
-        new SwingWorker<List<NguoiDung>, Void>() {
-            @Override
-            protected List<NguoiDung> doInBackground() {
-                return nguoiDungService.getAllNguoiDung();
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    List<NguoiDung> list = get();
-                    cbNguoiDung.removeAllItems();
-                    for (NguoiDung nd : list) {
-                        cbNguoiDung.addItem(new NguoiDungItem(nd.getMaND(), nd.getTenDangNhap()));
-                    }
-                } catch (Exception ex) {
-                    LOGGER.log(Level.WARNING, "Lỗi tải danh sách người dùng cho combobox sự kiện", ex);
-                }
-            }
-        }.execute();
     }
 
     private void loadData() {
@@ -277,15 +244,6 @@ public class SuKienTiecPanel extends JPanel {
                             dtThoiGian.setDateTimePermissive(LocalDateTime.now());
                         }
                         txtDiaDiem.setText(sk.getDiaDiem());
-                        
-                        if (sk.getNguoiDung() != null) {
-                            for (int i = 0; i < cbNguoiDung.getItemCount(); i++) {
-                                if (cbNguoiDung.getItemAt(i).id == sk.getNguoiDung().getMaND()) {
-                                    cbNguoiDung.setSelectedIndex(i);
-                                    break;
-                                }
-                            }
-                        }
                     }
                 } catch (Exception ex) {
                     LOGGER.log(Level.WARNING, "Lỗi đổ dữ liệu sự kiện lên form", ex);
@@ -299,7 +257,6 @@ public class SuKienTiecPanel extends JPanel {
         txtTenSuKien.setText("");
         dtThoiGian.setDateTimePermissive(LocalDateTime.now());
         txtDiaDiem.setText("");
-        if (cbNguoiDung.getItemCount() > 0) cbNguoiDung.setSelectedIndex(0);
         table.clearSelection();
     }
 
@@ -307,22 +264,26 @@ public class SuKienTiecPanel extends JPanel {
         String ten = txtTenSuKien.getText().trim();
         LocalDateTime time = dtThoiGian.getDateTimePermissive();
         String dia = txtDiaDiem.getText().trim();
-        NguoiDungItem ndItem = (NguoiDungItem) cbNguoiDung.getSelectedItem();
+        NguoiDung currentUser = mainFrame.getCurrentUser();
 
-        if (ten.isEmpty() || ndItem == null) {
-            JOptionPane.showMessageDialog(this, "Tên sự kiện và người phụ trách không được rỗng!");
+        if (ten.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tên sự kiện không được rỗng!");
+            return;
+        }
+
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, "Không xác định được tài khoản đăng nhập hiện tại.");
             return;
         }
 
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                NguoiDung nd = nguoiDungService.getById(ndItem.id);
                 SuKienTiec sk = new SuKienTiec();
                 sk.setTenSuKien(ten);
                 sk.setThoiGianToChuc(time);
                 sk.setDiaDiem(dia);
-                sk.setNguoiDung(nd);
+                sk.setNguoiDung(currentUser);
                 suKienTiecService.save(sk);
                 return null;
             }
@@ -352,10 +313,15 @@ public class SuKienTiecPanel extends JPanel {
         String ten = txtTenSuKien.getText().trim();
         LocalDateTime time = dtThoiGian.getDateTimePermissive();
         String dia = txtDiaDiem.getText().trim();
-        NguoiDungItem ndItem = (NguoiDungItem) cbNguoiDung.getSelectedItem();
+        NguoiDung currentUser = mainFrame.getCurrentUser();
 
-        if (ten.isEmpty() || ndItem == null) {
-            JOptionPane.showMessageDialog(this, "Tên sự kiện và người phụ trách rỗng!");
+        if (ten.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tên sự kiện không được rỗng!");
+            return;
+        }
+
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, "Không xác định được tài khoản đăng nhập hiện tại.");
             return;
         }
 
@@ -367,7 +333,7 @@ public class SuKienTiecPanel extends JPanel {
                     sk.setTenSuKien(ten);
                     sk.setThoiGianToChuc(time);
                     sk.setDiaDiem(dia);
-                    sk.setNguoiDung(nguoiDungService.getById(ndItem.id));
+                    sk.setNguoiDung(currentUser);
                     suKienTiecService.update(sk);
                 }
                 return null;
@@ -430,19 +396,4 @@ public class SuKienTiecPanel extends JPanel {
         }
     }
 
-    // Lớp phụ dùng hiển thị NguoiDung combobox
-    private static class NguoiDungItem {
-        int id;
-        String name;
-
-        NguoiDungItem(int id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name + " (ID: " + id + ")";
-        }
-    }
 }

@@ -39,6 +39,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
     @Override
     public void save(SuKienTiec item) {
         enforceOwnership(item);
+        // Luôn kiểm tra rule trước khi lưu mới sự kiện.
         validateBusinessRules(item, 0);
         addDefaultRehearsal(item);
         dao.save(item);
@@ -47,6 +48,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
     @Override
     public void update(SuKienTiec item) {
         enforceOwnership(item);
+        // Cập nhật vẫn phải qua cùng bộ rule nghiệp vụ.
         validateBusinessRules(item, item.getMaSK());
         dao.update(item);
     }
@@ -91,6 +93,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
             throw new IllegalArgumentException("Thời gian tổ chức không được để trống.");
         }
 
+        // Không cho phép tạo/sửa sự kiện lùi về quá khứ.
         if (thoiGian.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Không thể thêm/cập nhật sự kiện có thời gian trong quá khứ.");
         }
@@ -109,6 +112,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
                 item.getNguoiDung().getMaND()
         );
 
+        // Chặn trùng đầy đủ theo tên + thời gian + địa điểm + phụ trách.
         if (duplicated) {
             throw new IllegalArgumentException("Sự kiện đã tồn tại (trùng tên, thời gian, địa điểm, người phụ trách).");
         }
@@ -119,6 +123,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
             return;
         }
 
+        // Tạo lịch tổng duyệt mặc định khi thêm sự kiện mới.
         LocalDateTime rehearsalTime = item.getThoiGianToChuc().minusDays(1);
         if (rehearsalTime.isBefore(LocalDateTime.now())) {
             rehearsalTime = LocalDateTime.now().plusHours(1);
