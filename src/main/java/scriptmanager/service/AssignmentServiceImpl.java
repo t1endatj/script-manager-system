@@ -15,7 +15,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public List<PhanCongNhanSu> getNhanSuByHangMuc(int hangMucId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            return s.createQuery("FROM PhanCongNhanSu p JOIN FETCH p.nhanSu WHERE p.id.maHM = :hm", PhanCongNhanSu.class)
+            return s.createQuery("FROM PhanCongNhanSu p JOIN FETCH p.nhanSu WHERE p.hangMuc.maHM = :hm", PhanCongNhanSu.class)
                     .setParameter("hm", hangMucId).list();
         }
     }
@@ -23,7 +23,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public List<PhanCongThietBi> getThietBiByHangMuc(int hangMucId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            return s.createQuery("FROM PhanCongThietBi p JOIN FETCH p.thietBi WHERE p.id.maHM = :hm", PhanCongThietBi.class)
+            return s.createQuery("FROM PhanCongThietBi p JOIN FETCH p.thietBi WHERE p.hangMuc.maHM = :hm", PhanCongThietBi.class)
                     .setParameter("hm", hangMucId).list();
         }
     }
@@ -31,7 +31,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public List<SuDungDaoCu> getDaoCuByHangMuc(int hangMucId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            return s.createQuery("FROM SuDungDaoCu p JOIN FETCH p.daoCu WHERE p.id.maHM = :hm", SuDungDaoCu.class)
+            return s.createQuery("FROM SuDungDaoCu p JOIN FETCH p.daoCu WHERE p.hangMuc.maHM = :hm", SuDungDaoCu.class)
                     .setParameter("hm", hangMucId).list();
         }
     }
@@ -39,7 +39,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public List<SuDungHieuUng> getHieuUngByHangMuc(int hangMucId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            return s.createQuery("FROM SuDungHieuUng p JOIN FETCH p.hieuUng WHERE p.id.maHM = :hm", SuDungHieuUng.class)
+            return s.createQuery("FROM SuDungHieuUng p JOIN FETCH p.hieuUng WHERE p.hangMuc.maHM = :hm", SuDungHieuUng.class)
                     .setParameter("hm", hangMucId).list();
         }
     }
@@ -49,7 +49,11 @@ public class AssignmentServiceImpl implements AssignmentService {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
-            Long count = s.createQuery("SELECT count(p) FROM PhanCongNhanSu p WHERE p.id.maHM = :hm AND p.id.maNS = :ns", Long.class)
+
+            // Chặn phân công nhân sự nếu bị trùng lịch theo khung giờ.
+            validateNhanSuScheduleConflict(s, pc);
+
+            Long count = s.createQuery("SELECT count(p) FROM PhanCongNhanSu p WHERE p.hangMuc.maHM = :hm AND p.nhanSu.maNS = :ns", Long.class)
                     .setParameter("hm", pc.getId().getMaHM())
                     .setParameter("ns", pc.getId().getMaNS())
                     .uniqueResult();
@@ -78,7 +82,11 @@ public class AssignmentServiceImpl implements AssignmentService {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
-            Long count = s.createQuery("SELECT count(p) FROM PhanCongThietBi p WHERE p.id.maHM = :hm AND p.id.maTB = :tb", Long.class)
+
+            // Chặn phân công nếu thiết bị không đủ trong cùng thời điểm.
+            validateThietBiCapacityConflict(s, pc);
+
+            Long count = s.createQuery("SELECT count(p) FROM PhanCongThietBi p WHERE p.hangMuc.maHM = :hm AND p.thietBi.maTB = :tb", Long.class)
                     .setParameter("hm", pc.getId().getMaHM())
                     .setParameter("tb", pc.getId().getMaTB())
                     .uniqueResult();
@@ -107,7 +115,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
-            Long count = s.createQuery("SELECT count(p) FROM SuDungDaoCu p WHERE p.id.maHM = :hm AND p.id.maDaoCu = :dc", Long.class)
+            Long count = s.createQuery("SELECT count(p) FROM SuDungDaoCu p WHERE p.hangMuc.maHM = :hm AND p.daoCu.maDaoCu = :dc", Long.class)
                     .setParameter("hm", pc.getId().getMaHM())
                     .setParameter("dc", pc.getId().getMaDaoCu())
                     .uniqueResult();
@@ -189,7 +197,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         if (hangMuc.getTgBatDau() == null || hangMuc.getTgKetThuc() == null) return conflicts;
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<PhanCongNhanSu> nss = session.createQuery("FROM PhanCongNhanSu p JOIN FETCH p.nhanSu WHERE p.id.maHM = :hm", PhanCongNhanSu.class)
+            List<PhanCongNhanSu> nss = session.createQuery("FROM PhanCongNhanSu p JOIN FETCH p.nhanSu WHERE p.hangMuc.maHM = :hm", PhanCongNhanSu.class)
                     .setParameter("hm", hangMuc.getMaHM()).list();
             for (PhanCongNhanSu pc : nss) {
                 String hql = "SELECT hm FROM HangMucKichBan hm JOIN hm.phanCongNhanSus pcns " +
@@ -206,7 +214,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                 }
             }
 
-            List<PhanCongThietBi> tbs = session.createQuery("FROM PhanCongThietBi p JOIN FETCH p.thietBi WHERE p.id.maHM = :hm", PhanCongThietBi.class)
+            List<PhanCongThietBi> tbs = session.createQuery("FROM PhanCongThietBi p JOIN FETCH p.thietBi WHERE p.hangMuc.maHM = :hm", PhanCongThietBi.class)
                     .setParameter("hm", hangMuc.getMaHM()).list();
             for (PhanCongThietBi pc : tbs) {
                 String hqlSum = "SELECT SUM(pctb.soLuongSuDung) FROM PhanCongThietBi pctb JOIN pctb.hangMuc hm " +
@@ -226,5 +234,57 @@ public class AssignmentServiceImpl implements AssignmentService {
             }
         } catch(Exception e) { e.printStackTrace(); }
         return conflicts;
+    }
+
+    private void validateNhanSuScheduleConflict(Session session, PhanCongNhanSu pc) {
+        HangMucKichBan hangMuc = session.get(HangMucKichBan.class, pc.getId().getMaHM());
+        if (hangMuc == null || hangMuc.getTgBatDau() == null || hangMuc.getTgKetThuc() == null) {
+            return;
+        }
+
+        // Tìm hạng mục khác bị giao nhau thời gian của cùng nhân sự.
+        Long overlapCount = session.createQuery(
+                        "SELECT COUNT(hm) FROM HangMucKichBan hm JOIN hm.phanCongNhanSus pcns " +
+                                "WHERE pcns.nhanSu.maNS = :maNS AND hm.maHM <> :currentHM " +
+                                "AND (:start < hm.tgKetThuc AND :end > hm.tgBatDau)",
+                        Long.class)
+                .setParameter("maNS", pc.getId().getMaNS())
+                .setParameter("currentHM", hangMuc.getMaHM())
+                .setParameter("start", hangMuc.getTgBatDau())
+                .setParameter("end", hangMuc.getTgKetThuc())
+                .uniqueResult();
+
+        if (overlapCount != null && overlapCount > 0) {
+            throw new IllegalArgumentException("Nhân sự đang bị trùng lịch với hạng mục khác trong cùng khung giờ.");
+        }
+    }
+
+    private void validateThietBiCapacityConflict(Session session, PhanCongThietBi pc) {
+        HangMucKichBan hangMuc = session.get(HangMucKichBan.class, pc.getId().getMaHM());
+        if (hangMuc == null || hangMuc.getTgBatDau() == null || hangMuc.getTgKetThuc() == null) {
+            return;
+        }
+
+        // Tính tổng thiết bị đã dùng ở các hạng mục trùng thời gian.
+        Long usedQuantity = session.createQuery(
+                        "SELECT COALESCE(SUM(pctb.soLuongSuDung), 0) FROM PhanCongThietBi pctb JOIN pctb.hangMuc hm " +
+                                "WHERE pctb.thietBi.maTB = :maTB AND hm.maHM <> :currentHM " +
+                                "AND (:start < hm.tgKetThuc AND :end > hm.tgBatDau)",
+                        Long.class)
+                .setParameter("maTB", pc.getId().getMaTB())
+                .setParameter("currentHM", hangMuc.getMaHM())
+                .setParameter("start", hangMuc.getTgBatDau())
+                .setParameter("end", hangMuc.getTgKetThuc())
+                .uniqueResult();
+
+        Integer total = session.createQuery("SELECT t.soLuong FROM ThietBi t WHERE t.maTB = :maTB", Integer.class)
+                .setParameter("maTB", pc.getId().getMaTB())
+                .uniqueResult();
+
+        long currentUsed = usedQuantity == null ? 0L : usedQuantity;
+        int capacity = total == null ? 0 : total;
+        if (currentUsed + pc.getSoLuongSuDung() > capacity) {
+            throw new IllegalArgumentException("Thiết bị không đủ cho khung giờ đã chọn.");
+        }
     }
 }

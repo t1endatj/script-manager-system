@@ -100,15 +100,21 @@ public class DashboardDao {
 
     public List<DashboardTaskItemDTO> getPendingTasks(int limit) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime startOfNextDay = startOfDay.plusDays(1);
+
             List<Object[]> rows = session.createQuery(
                             "SELECT hm.tenHM, sk.tenSuKien, hm.tgBatDau, COUNT(ns.maNS), MIN(ns.tenNS) " +
                                     "FROM HangMucKichBan hm " +
                                     "JOIN hm.suKienTiec sk " +
                                     "LEFT JOIN hm.phanCongNhanSus pc " +
                                     "LEFT JOIN pc.nhanSu ns " +
+                                    "WHERE sk.thoiGianToChuc >= :startOfDay AND sk.thoiGianToChuc < :startOfNextDay " +
                                     "GROUP BY hm.maHM, hm.tenHM, sk.tenSuKien, hm.tgBatDau " +
                                     "ORDER BY hm.tgBatDau ASC",
                             Object[].class)
+                    .setParameter("startOfDay", startOfDay)
+                    .setParameter("startOfNextDay", startOfNextDay)
                     .setMaxResults(limit)
                     .list();
 

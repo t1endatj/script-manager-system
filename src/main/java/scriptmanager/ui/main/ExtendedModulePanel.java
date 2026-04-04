@@ -1,5 +1,6 @@
 package scriptmanager.ui.main;
 
+import com.github.lgooddatepicker.components.DateTimePicker;
 import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;
 import scriptmanager.entity.asset.DaoCu;
@@ -20,7 +21,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class ExtendedModulePanel extends JPanel {
@@ -42,8 +42,6 @@ public class ExtendedModulePanel extends JPanel {
     private final HangMucKichBanService hangMucService = new HangMucKichBanServiceImpl();
     private final SuKienTiecService suKienService = new SuKienTiecServiceImpl();
     private final PhanCongNhanSuService phanCongNhanSuService = new PhanCongNhanSuService();
-
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public ExtendedModulePanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
@@ -67,8 +65,8 @@ public class ExtendedModulePanel extends JPanel {
         JButton back = new JButton("Quay lại Dashboard");
         back.putClientProperty(FlatClientProperties.STYLE,
                 "arc:12;" +
-                        "background:#F3F4F6;" +
-                        "foreground:#111111;" +
+                        "background:#2563EB;" +
+                        "foreground:#FFFFFF;" +
                         "focusWidth:0;" +
                         "borderWidth:0");
         back.addActionListener(e -> mainFrame.showDashboard());
@@ -199,6 +197,15 @@ public class ExtendedModulePanel extends JPanel {
         JTextField vaiTro = new JTextField();
         final int[] selectedId = {-1};
 
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            ten.setText("");
+            sdt.setText("");
+            vaiTro.setText("");
+            table.clearSelection();
+            ten.requestFocusInWindow();
+        };
+
         Runnable load = () -> {
             model.setRowCount(0);
             for (NhanSu item : nhanSuService.findAll()) {
@@ -211,6 +218,7 @@ public class ExtendedModulePanel extends JPanel {
         add.addActionListener(e -> {
             try {
                 nhanSuService.save(new NhanSu(ten.getText().trim(), sdt.getText().trim(), vaiTro.getText().trim()));
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm nhân sự thất bại: " + ex.getMessage());
@@ -244,11 +252,21 @@ public class ExtendedModulePanel extends JPanel {
                 item.setSdt(sdt.getText().trim());
                 item.setVaiTro(vaiTro.getText().trim());
                 nhanSuService.update(item);
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật nhân sự thất bại: " + ex.getMessage());
             }
         });
+
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -262,16 +280,51 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên nhân sự", "SĐT", "Vai trò"}, new JComponent[]{ten, sdt, vaiTro}, add, delete, update);
+        return wrapCrud(table, load, new String[]{"Tên nhân sự", "SĐT", "Vai trò"}, new JComponent[]{ten, sdt, vaiTro}, add, delete, update, reset);
     }
 
     private JComponent createPhanCongNhanSuTheoSuKienTab() {
         DefaultTableModel model = new DefaultTableModel(
                 new String[]{"Mã SK", "Sự kiện", "Mã HM", "Hạng mục", "Mã NS", "Nhân sự", "Nhiệm vụ"}, 0);
         JTable table = new JTable(model);
-        JTextField maSK = new JTextField();
-        JTextField maNS = new JTextField();
+
+        JComboBox<IdNameItem> cbSuKien = new JComboBox<>();
+        JComboBox<IdNameItem> cbHangMuc = new JComboBox<>();
+        JComboBox<IdNameItem> cbNhanSu = new JComboBox<>();
         JTextField nhiemVu = new JTextField();
+        final int[] selectedHangMucId = {-1};
+        final int[] selectedNhanSuId = {-1};
+
+        Runnable loadHangMucByEvent = () -> {
+            cbHangMuc.removeAllItems();
+            IdNameItem suKienItem = (IdNameItem) cbSuKien.getSelectedItem();
+            if (suKienItem == null) {
+                return;
+            }
+            for (HangMucKichBan hm : hangMucService.findBySuKienId(suKienItem.id)) {
+                cbHangMuc.addItem(new IdNameItem(hm.getMaHM(), hm.getTenHM()));
+            }
+        };
+
+        Runnable resetForm = () -> {
+            selectedHangMucId[0] = -1;
+            selectedNhanSuId[0] = -1;
+            table.clearSelection();
+            nhiemVu.setText("");
+            if (cbSuKien.getItemCount() > 0 && cbSuKien.getSelectedIndex() < 0) {
+                cbSuKien.setSelectedIndex(0);
+            }
+            loadHangMucByEvent.run();
+            if (cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+            if (cbNhanSu.getItemCount() > 0) {
+                cbNhanSu.setSelectedIndex(0);
+            }
+        };
+
+
+        cbSuKien.addActionListener(e -> loadHangMucByEvent.run());
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -286,18 +339,110 @@ public class ExtendedModulePanel extends JPanel {
                         item.get("nhiemVu")
                 });
             }
+
+            Object selectedEvent = cbSuKien.getSelectedItem();
+            Object selectedHangMuc = cbHangMuc.getSelectedItem();
+            Object selectedNhanSu = cbNhanSu.getSelectedItem();
+
+            cbSuKien.removeAllItems();
+            for (SuKienTiec sk : suKienService.findAll()) {
+                cbSuKien.addItem(new IdNameItem(sk.getMaSK(), sk.getTenSuKien()));
+            }
+
+            if (selectedEvent instanceof IdNameItem selectedEventItem) {
+                selectComboById(cbSuKien, selectedEventItem.id);
+            }
+            if (cbSuKien.getSelectedItem() == null && cbSuKien.getItemCount() > 0) {
+                cbSuKien.setSelectedIndex(0);
+            }
+
+            loadHangMucByEvent.run();
+            if (selectedHangMuc instanceof IdNameItem selectedHangMucItem) {
+                selectComboById(cbHangMuc, selectedHangMucItem.id);
+            }
+            if (cbHangMuc.getSelectedItem() == null && cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+
+            cbNhanSu.removeAllItems();
+            for (NhanSu ns : nhanSuService.findAll()) {
+                cbNhanSu.addItem(new IdNameItem(ns.getMaNS(), ns.getTenNS()));
+            }
+            if (selectedNhanSu instanceof IdNameItem selectedNhanSuItem) {
+                selectComboById(cbNhanSu, selectedNhanSuItem.id);
+            }
+            if (cbNhanSu.getSelectedItem() == null && cbNhanSu.getItemCount() > 0) {
+                cbNhanSu.setSelectedIndex(0);
+            }
         };
 
         JButton assign = new JButton("Phân công theo sự kiện");
         styleUpdateButton(assign);
         assign.addActionListener(e -> {
             try {
-                int eventId = Integer.parseInt(maSK.getText().trim());
-                int staffId = Integer.parseInt(maNS.getText().trim());
-                phanCongNhanSuService.assignNhanSuToEvent(eventId, staffId, nhiemVu.getText());
+                IdNameItem suKienItem = (IdNameItem) cbSuKien.getSelectedItem();
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                IdNameItem nhanSuItem = (IdNameItem) cbNhanSu.getSelectedItem();
+                if (suKienItem == null || hangMucItem == null || nhanSuItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ sự kiện, hạng mục và nhân sự.");
+                    return;
+                }
+
+                if (existsAssignment(model, hangMucItem.id, nhanSuItem.id, -1)) {
+                    JOptionPane.showMessageDialog(this, "Phân công đã tồn tại. Vui lòng dùng nút cập nhật.");
+                    return;
+                }
+
+                phanCongNhanSuService.assignNhanSuToHangMuc(
+                        suKienItem.id,
+                        hangMucItem.id,
+                        nhanSuItem.id,
+                        nhiemVu.getText()
+                );
+                JOptionPane.showMessageDialog(this, "Phân công thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Phân công nhân sự thất bại: " + ex.getMessage());
+            }
+        });
+
+        JButton update = new JButton("Cập nhật phân công");
+        styleUpdateButton(update);
+        update.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow < 0 || selectedHangMucId[0] < 0 || selectedNhanSuId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng phân công để cập nhật.");
+                return;
+            }
+
+            try {
+                IdNameItem suKienItem = (IdNameItem) cbSuKien.getSelectedItem();
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                IdNameItem nhanSuItem = (IdNameItem) cbNhanSu.getSelectedItem();
+                if (suKienItem == null || hangMucItem == null || nhanSuItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ sự kiện, hạng mục và nhân sự.");
+                    return;
+                }
+
+                if (existsAssignment(model, hangMucItem.id, nhanSuItem.id, selectedRow)) {
+                    JOptionPane.showMessageDialog(this, "Phân công đích đã tồn tại, không thể cập nhật trùng.");
+                    return;
+                }
+
+                phanCongNhanSuService.deleteByHangMucAndNhanSu(selectedHangMucId[0], selectedNhanSuId[0]);
+                phanCongNhanSuService.assignNhanSuToHangMuc(
+                        suKienItem.id,
+                        hangMucItem.id,
+                        nhanSuItem.id,
+                        nhiemVu.getText()
+                );
+
+                JOptionPane.showMessageDialog(this, "Cập nhật phân công thành công.");
+                resetForm.run();
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Cập nhật phân công thất bại: " + ex.getMessage());
             }
         });
 
@@ -305,51 +450,123 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
-                try {
-                    int hangMucId = (int) model.getValueAt(row, 2);
-                    int staffId = (int) model.getValueAt(row, 4);
-                    phanCongNhanSuService.deleteByHangMucAndNhanSu(hangMucId, staffId);
-                    load.run();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Xóa phân công thất bại: " + ex.getMessage());
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
+                int hangMucId = (int) model.getValueAt(row, 2);
+                int staffId = (int) model.getValueAt(row, 4);
+                phanCongNhanSuService.deleteByHangMucAndNhanSu(hangMucId, staffId);
+                JOptionPane.showMessageDialog(this, "Xóa phân công thành công.");
+                resetForm.run();
+                load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa phân công thất bại: " + ex.getMessage());
+            }
+        });
+
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    int maSK = (int) model.getValueAt(row, 0);
+                    int maHM = (int) model.getValueAt(row, 2);
+                    int maNS = (int) model.getValueAt(row, 4);
+                    selectedHangMucId[0] = maHM;
+                    selectedNhanSuId[0] = maNS;
+                    selectComboById(cbSuKien, maSK);
+                    loadHangMucByEvent.run();
+                    selectComboById(cbHangMuc, maHM);
+                    selectComboById(cbNhanSu, maNS);
+                    Object task = model.getValueAt(row, 6);
+                    nhiemVu.setText(task == null ? "" : task.toString());
                 }
             }
         });
 
         return wrapCrud(table, load,
-                new String[]{"Mã sự kiện", "Mã nhân sự", "Nhiệm vụ"},
-                new JComponent[]{maSK, maNS, nhiemVu}, assign, delete);
+                new String[]{"Sự kiện", "Hạng mục thuộc sự kiện", "Nhân sự", "Nhiệm vụ"},
+                new JComponent[]{cbSuKien, cbHangMuc, cbNhanSu, nhiemVu}, assign, delete, update, reset);
     }
 
     private JComponent createThietBiTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã TB", "Tên thiết bị", "Số lượng", "Tình trạng", "Mã đối tác"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã TB", "Tên thiết bị", "Số lượng", "Tình trạng", "Đối tác"}, 0);
         JTable table = new JTable(model);
         JTextField ten = new JTextField();
         JTextField soLuong = new JTextField();
         JTextField tinhTrang = new JTextField();
-        JTextField maDT = new JTextField();
+        JComboBox<IdNameItem> cbDoiTac = new JComboBox<>();
         final int[] selectedId = {-1};
+
+        Runnable loadDoiTacOptions = () -> {
+            Object old = cbDoiTac.getSelectedItem();
+            cbDoiTac.removeAllItems();
+            for (DoiTac doiTac : doiTacService.findAll()) {
+                cbDoiTac.addItem(new IdNameItem(doiTac.getMaDT(), doiTac.getTenDonVi()));
+            }
+            if (old instanceof IdNameItem oldItem) {
+                selectComboById(cbDoiTac, oldItem.id);
+            }
+            if (cbDoiTac.getSelectedItem() == null && cbDoiTac.getItemCount() > 0) {
+                cbDoiTac.setSelectedIndex(0);
+            }
+        };
+
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            ten.setText("");
+            soLuong.setText("");
+            tinhTrang.setText("");
+            table.clearSelection();
+            if (cbDoiTac.getItemCount() > 0) {
+                cbDoiTac.setSelectedIndex(0);
+            }
+            ten.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
             for (ThietBi item : thietBiService.findAll()) {
-                Integer doiTacId = item.getDoiTac() != null ? item.getDoiTac().getMaDT() : null;
-                model.addRow(new Object[]{item.getMaTB(), item.getTenTB(), item.getSoLuong(), item.getTinhTrang(), doiTacId});
+                String doiTacName = item.getDoiTac() != null ? item.getDoiTac().getTenDonVi() : "N/A";
+                model.addRow(new Object[]{item.getMaTB(), item.getTenTB(), item.getSoLuong(), item.getTinhTrang(), doiTacName});
             }
+            loadDoiTacOptions.run();
         };
 
         JButton add = new JButton("Thêm");
         styleAddButton(add);
         add.addActionListener(e -> {
             try {
-                DoiTac doiTac = doiTacService.findById(Integer.parseInt(maDT.getText().trim()));
+                IdNameItem doiTacItem = (IdNameItem) cbDoiTac.getSelectedItem();
+                if (doiTacItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn đối tác.");
+                    return;
+                }
+                int soLuongInt = Integer.parseInt(soLuong.getText().trim());
+                if (soLuongInt < 0) {
+                    JOptionPane.showMessageDialog(this, "Số lượng phải lớn hơn hoặc bằng 0.");
+                    return;
+                }
+
+                DoiTac doiTac = doiTacService.findById(doiTacItem.id);
                 if (doiTac == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy đối tác");
                     return;
                 }
-                ThietBi item = new ThietBi(ten.getText().trim(), Integer.parseInt(soLuong.getText().trim()), tinhTrang.getText().trim(), doiTac);
+                ThietBi item = new ThietBi(ten.getText().trim(), soLuongInt, tinhTrang.getText().trim(), doiTac);
                 thietBiService.save(item);
+                JOptionPane.showMessageDialog(this, "Thêm thiết bị thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm thiết bị thất bại: " + ex.getMessage());
@@ -360,9 +577,17 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
                 thietBiService.delete((int) model.getValueAt(row, 0));
+                JOptionPane.showMessageDialog(this, "Xóa thiết bị thành công.");
+                resetForm.run();
                 load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa thiết bị thất bại: " + ex.getMessage());
             }
         });
 
@@ -375,21 +600,43 @@ public class ExtendedModulePanel extends JPanel {
             }
             try {
                 ThietBi item = thietBiService.findById(selectedId[0]);
-                DoiTac doiTac = doiTacService.findById(Integer.parseInt(maDT.getText().trim()));
+                IdNameItem doiTacItem = (IdNameItem) cbDoiTac.getSelectedItem();
+                if (doiTacItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn đối tác.");
+                    return;
+                }
+                int soLuongInt = Integer.parseInt(soLuong.getText().trim());
+                if (soLuongInt < 0) {
+                    JOptionPane.showMessageDialog(this, "Số lượng phải lớn hơn hoặc bằng 0.");
+                    return;
+                }
+
+                DoiTac doiTac = doiTacService.findById(doiTacItem.id);
                 if (item == null || doiTac == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy thiết bị hoặc đối tác.");
                     return;
                 }
                 item.setTenTB(ten.getText().trim());
-                item.setSoLuong(Integer.parseInt(soLuong.getText().trim()));
+                item.setSoLuong(soLuongInt);
                 item.setTinhTrang(tinhTrang.getText().trim());
                 item.setDoiTac(doiTac);
                 thietBiService.update(item);
+                JOptionPane.showMessageDialog(this, "Cập nhật thiết bị thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật thiết bị thất bại: " + ex.getMessage());
             }
         });
+
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -399,14 +646,17 @@ public class ExtendedModulePanel extends JPanel {
                     ten.setText(String.valueOf(model.getValueAt(row, 1)));
                     soLuong.setText(String.valueOf(model.getValueAt(row, 2)));
                     tinhTrang.setText(String.valueOf(model.getValueAt(row, 3)));
-                    maDT.setText(String.valueOf(model.getValueAt(row, 4)));
+                    ThietBi selected = thietBiService.findById(selectedId[0]);
+                    if (selected != null && selected.getDoiTac() != null) {
+                        selectComboById(cbDoiTac, selected.getDoiTac().getMaDT());
+                    }
                 }
             }
         });
 
         return wrapCrud(table, load,
-                new String[]{"Tên thiết bị", "Số lượng", "Tình trạng", "Mã đối tác"},
-                new JComponent[]{ten, soLuong, tinhTrang, maDT}, add, delete, update);
+                new String[]{"Tên thiết bị", "Số lượng", "Tình trạng", "Đối tác"},
+                new JComponent[]{ten, soLuong, tinhTrang, cbDoiTac}, add, delete, update, reset);
     }
 
     private JComponent createDaoCuTab() {
@@ -416,6 +666,15 @@ public class ExtendedModulePanel extends JPanel {
         JTextField soLuong = new JTextField();
         JTextField trangThai = new JTextField();
         final int[] selectedId = {-1};
+
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            ten.setText("");
+            soLuong.setText("");
+            trangThai.setText("");
+            table.clearSelection();
+            ten.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -429,6 +688,7 @@ public class ExtendedModulePanel extends JPanel {
         add.addActionListener(e -> {
             try {
                 daoCuService.save(new DaoCu(ten.getText().trim(), Integer.parseInt(soLuong.getText().trim()), trangThai.getText().trim()));
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm đạo cụ thất bại: " + ex.getMessage());
@@ -462,6 +722,7 @@ public class ExtendedModulePanel extends JPanel {
                 item.setSoLuong(Integer.parseInt(soLuong.getText().trim()));
                 item.setTrangThai(trangThai.getText().trim());
                 daoCuService.update(item);
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật đạo cụ thất bại: " + ex.getMessage());
@@ -480,9 +741,18 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
         return wrapCrud(table, load,
                 new String[]{"Tên đạo cụ", "Số lượng", "Trạng thái"},
-                new JComponent[]{ten, soLuong, trangThai}, add, delete, update);
+                new JComponent[]{ten, soLuong, trangThai}, add, delete, update, reset);
     }
 
     private JComponent createHieuUngTab() {
@@ -490,6 +760,13 @@ public class ExtendedModulePanel extends JPanel {
         JTable table = new JTable(model);
         JTextField ten = new JTextField();
         final int[] selectedId = {-1};
+
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            ten.setText("");
+            table.clearSelection();
+            ten.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
@@ -503,6 +780,7 @@ public class ExtendedModulePanel extends JPanel {
         add.addActionListener(e -> {
             try {
                 hieuUngService.save(new HieuUng(ten.getText().trim()));
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm hiệu ứng thất bại: " + ex.getMessage());
@@ -534,6 +812,7 @@ public class ExtendedModulePanel extends JPanel {
                 }
                 item.setTenHU(ten.getText().trim());
                 hieuUngService.update(item);
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật hiệu ứng thất bại: " + ex.getMessage());
@@ -550,32 +829,84 @@ public class ExtendedModulePanel extends JPanel {
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên hiệu ứng"}, new JComponent[]{ten}, add, delete, update);
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
+        return wrapCrud(table, load, new String[]{"Tên hiệu ứng"}, new JComponent[]{ten}, add, delete, update, reset);
     }
 
     private JComponent createDanhSachNhacTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã bài hát", "Tên bài hát", "Ca sĩ", "Thời lượng", "File nhạc", "Mã hạng mục"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã bài hát", "Tên bài hát", "Ca sĩ", "Thời lượng (phút)", "File nhạc", "Hạng mục"}, 0);
         JTable table = new JTable(model);
         JTextField ten = new JTextField();
         JTextField caSi = new JTextField();
         JTextField thoiLuong = new JTextField();
         JTextField fileNhac = new JTextField();
-        JTextField maHM = new JTextField();
+        JComboBox<IdNameItem> cbHangMuc = new JComboBox<>();
         final int[] selectedId = {-1};
+
+        Runnable loadHangMucOptions = () -> {
+            Object old = cbHangMuc.getSelectedItem();
+            cbHangMuc.removeAllItems();
+            for (HangMucKichBan hm : hangMucService.findAll()) {
+                String name = hm.getTenHM();
+                if (hm.getSuKienTiec() != null) {
+                    name += " - " + hm.getSuKienTiec().getTenSuKien();
+                }
+                cbHangMuc.addItem(new IdNameItem(hm.getMaHM(), name));
+            }
+            if (old instanceof IdNameItem oldItem) {
+                selectComboById(cbHangMuc, oldItem.id);
+            }
+            if (cbHangMuc.getSelectedItem() == null && cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+        };
+
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            ten.setText("");
+            caSi.setText("");
+            thoiLuong.setText("");
+            fileNhac.setText("");
+            table.clearSelection();
+            if (cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+            ten.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
             for (DanhSachNhac item : danhSachNhacService.findAll()) {
-                Integer hangMucId = item.getHangMuc() != null ? item.getHangMuc().getMaHM() : null;
-                model.addRow(new Object[]{item.getMaBaiHat(), item.getTenBaiHat(), item.getCaSi(), item.getThoiLuong(), item.getFileNhac(), hangMucId});
+                String hangMucName = item.getHangMuc() != null ? item.getHangMuc().getTenHM() : "N/A";
+                model.addRow(new Object[]{item.getMaBaiHat(), item.getTenBaiHat(), item.getCaSi(), item.getThoiLuong(), item.getFileNhac(), hangMucName});
             }
+            loadHangMucOptions.run();
         };
 
         JButton add = new JButton("Thêm");
         styleAddButton(add);
         add.addActionListener(e -> {
             try {
-                HangMucKichBan hm = hangMucService.findById(Integer.parseInt(maHM.getText().trim()));
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                if (hangMucItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn hạng mục.");
+                    return;
+                }
+                int duration = Integer.parseInt(thoiLuong.getText().trim());
+                if (duration <= 0) {
+                    JOptionPane.showMessageDialog(this, "Thời lượng phải lớn hơn 0 phút.");
+                    return;
+                }
+
+                HangMucKichBan hm = hangMucService.findById(hangMucItem.id);
                 if (hm == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy hạng mục");
                     return;
@@ -583,11 +914,13 @@ public class ExtendedModulePanel extends JPanel {
                 DanhSachNhac item = new DanhSachNhac(
                         ten.getText().trim(),
                         caSi.getText().trim(),
-                        Integer.parseInt(thoiLuong.getText().trim()),
+                        duration,
                         fileNhac.getText().trim(),
                         hm
                 );
                 danhSachNhacService.save(item);
+                JOptionPane.showMessageDialog(this, "Thêm bài hát thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm bài hát thất bại: " + ex.getMessage());
@@ -598,9 +931,17 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
                 danhSachNhacService.delete((int) model.getValueAt(row, 0));
+                JOptionPane.showMessageDialog(this, "Xóa bài hát thành công.");
+                resetForm.run();
                 load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa bài hát thất bại: " + ex.getMessage());
             }
         });
 
@@ -613,17 +954,30 @@ public class ExtendedModulePanel extends JPanel {
             }
             try {
                 DanhSachNhac item = danhSachNhacService.findById(selectedId[0]);
-                HangMucKichBan hm = hangMucService.findById(Integer.parseInt(maHM.getText().trim()));
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                if (hangMucItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn hạng mục.");
+                    return;
+                }
+                int duration = Integer.parseInt(thoiLuong.getText().trim());
+                if (duration <= 0) {
+                    JOptionPane.showMessageDialog(this, "Thời lượng phải lớn hơn 0 phút.");
+                    return;
+                }
+
+                HangMucKichBan hm = hangMucService.findById(hangMucItem.id);
                 if (item == null || hm == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát hoặc hạng mục.");
                     return;
                 }
                 item.setTenBaiHat(ten.getText().trim());
                 item.setCaSi(caSi.getText().trim());
-                item.setThoiLuong(Integer.parseInt(thoiLuong.getText().trim()));
+                item.setThoiLuong(duration);
                 item.setFileNhac(fileNhac.getText().trim());
                 item.setHangMuc(hm);
                 danhSachNhacService.update(item);
+                JOptionPane.showMessageDialog(this, "Cập nhật bài hát thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật bài hát thất bại: " + ex.getMessage());
@@ -639,49 +993,101 @@ public class ExtendedModulePanel extends JPanel {
                     caSi.setText(String.valueOf(model.getValueAt(row, 2)));
                     thoiLuong.setText(String.valueOf(model.getValueAt(row, 3)));
                     fileNhac.setText(String.valueOf(model.getValueAt(row, 4)));
-                    maHM.setText(String.valueOf(model.getValueAt(row, 5)));
+                    DanhSachNhac selected = danhSachNhacService.findById(selectedId[0]);
+                    if (selected != null && selected.getHangMuc() != null) {
+                        selectComboById(cbHangMuc, selected.getHangMuc().getMaHM());
+                    }
                 }
             }
         });
 
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
         return wrapCrud(table, load,
-                new String[]{"Tên bài hát", "Ca sĩ", "Thời lượng", "File nhạc", "Mã hạng mục"},
-                new JComponent[]{ten, caSi, thoiLuong, fileNhac, maHM}, add, delete, update);
+                new String[]{"Tên bài hát", "Ca sĩ", "Thời lượng (phút)", "File nhạc", "Hạng mục"},
+                new JComponent[]{ten, caSi, thoiLuong, fileNhac, cbHangMuc}, add, delete, update, reset);
     }
 
     private JComponent createLichTongDuyetTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã tổng duyệt", "Thời gian duyệt", "Nội dung duyệt", "Trạng thái", "Mã sự kiện"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã tổng duyệt", "Thời gian duyệt", "Nội dung duyệt", "Trạng thái", "Sự kiện"}, 0);
         JTable table = new JTable(model);
-        JTextField thoiGian = new JTextField("2026-05-01 18:00");
+        DateTimePicker thoiGian = new DateTimePicker();
         JTextField noiDung = new JTextField();
-        JTextField trangThai = new JTextField("Chưa duyệt");
-        JTextField maSK = new JTextField();
+        JComboBox<String> cbTrangThai = new JComboBox<>(new String[]{"Chưa duyệt", "Đang duyệt", "Hoàn thành"});
+        JComboBox<IdNameItem> cbSuKien = new JComboBox<>();
         final int[] selectedId = {-1};
+
+        Runnable loadSuKienOptions = () -> {
+            Object old = cbSuKien.getSelectedItem();
+            cbSuKien.removeAllItems();
+            for (SuKienTiec sk : suKienService.findAll()) {
+                cbSuKien.addItem(new IdNameItem(sk.getMaSK(), sk.getTenSuKien()));
+            }
+            if (old instanceof IdNameItem oldItem) {
+                selectComboById(cbSuKien, oldItem.id);
+            }
+            if (cbSuKien.getSelectedItem() == null && cbSuKien.getItemCount() > 0) {
+                cbSuKien.setSelectedIndex(0);
+            }
+        };
+
+        Runnable resetForm = () -> {
+            selectedId[0] = -1;
+            thoiGian.setDateTimePermissive(LocalDateTime.now());
+            noiDung.setText("");
+            cbTrangThai.setSelectedIndex(0);
+            table.clearSelection();
+            if (cbSuKien.getItemCount() > 0) {
+                cbSuKien.setSelectedIndex(0);
+            }
+            noiDung.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
             for (LichTongDuyet item : lichTongDuyetService.findAll()) {
-                Integer suKienId = item.getSuKienTiec() != null ? item.getSuKienTiec().getMaSK() : null;
-                model.addRow(new Object[]{item.getMaTongDuyet(), item.getThoiGianDuyet(), item.getNoiDungDuyet(), item.getTrangThai(), suKienId});
+                String suKienName = item.getSuKienTiec() != null ? item.getSuKienTiec().getTenSuKien() : "N/A";
+                model.addRow(new Object[]{item.getMaTongDuyet(), item.getThoiGianDuyet(), item.getNoiDungDuyet(), item.getTrangThai(), suKienName});
             }
+            loadSuKienOptions.run();
         };
 
         JButton add = new JButton("Thêm");
         styleAddButton(add);
         add.addActionListener(e -> {
             try {
-                SuKienTiec sk = suKienService.findById(Integer.parseInt(maSK.getText().trim()));
+                IdNameItem suKienItem = (IdNameItem) cbSuKien.getSelectedItem();
+                if (suKienItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn sự kiện.");
+                    return;
+                }
+                LocalDateTime tgDuyet = thoiGian.getDateTimeStrict();
+                if (tgDuyet == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn thời gian tổng duyệt hợp lệ.");
+                    return;
+                }
+
+                SuKienTiec sk = suKienService.findById(suKienItem.id);
                 if (sk == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy sự kiện");
                     return;
                 }
                 LichTongDuyet item = new LichTongDuyet(
-                        LocalDateTime.parse(thoiGian.getText().trim(), DATE_TIME_FORMATTER),
+                        tgDuyet,
                         noiDung.getText().trim(),
-                        trangThai.getText().trim(),
+                        String.valueOf(cbTrangThai.getSelectedItem()),
                         sk
                 );
                 lichTongDuyetService.save(item);
+                JOptionPane.showMessageDialog(this, "Thêm lịch tổng duyệt thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Thêm lịch tổng duyệt thất bại: " + ex.getMessage());
@@ -692,9 +1098,17 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
                 lichTongDuyetService.delete((int) model.getValueAt(row, 0));
+                JOptionPane.showMessageDialog(this, "Xóa lịch tổng duyệt thành công.");
+                resetForm.run();
                 load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa lịch tổng duyệt thất bại: " + ex.getMessage());
             }
         });
 
@@ -707,16 +1121,29 @@ public class ExtendedModulePanel extends JPanel {
             }
             try {
                 LichTongDuyet item = lichTongDuyetService.findById(selectedId[0]);
-                SuKienTiec sk = suKienService.findById(Integer.parseInt(maSK.getText().trim()));
+                IdNameItem suKienItem = (IdNameItem) cbSuKien.getSelectedItem();
+                if (suKienItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn sự kiện.");
+                    return;
+                }
+                LocalDateTime tgDuyet = thoiGian.getDateTimeStrict();
+                if (tgDuyet == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn thời gian tổng duyệt hợp lệ.");
+                    return;
+                }
+
+                SuKienTiec sk = suKienService.findById(suKienItem.id);
                 if (item == null || sk == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy lịch tổng duyệt hoặc sự kiện.");
                     return;
                 }
-                item.setThoiGianDuyet(LocalDateTime.parse(thoiGian.getText().trim(), DATE_TIME_FORMATTER));
+                item.setThoiGianDuyet(tgDuyet);
                 item.setNoiDungDuyet(noiDung.getText().trim());
-                item.setTrangThai(trangThai.getText().trim());
+                item.setTrangThai(String.valueOf(cbTrangThai.getSelectedItem()));
                 item.setSuKienTiec(sk);
                 lichTongDuyetService.update(item);
+                JOptionPane.showMessageDialog(this, "Cập nhật lịch tổng duyệt thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Cập nhật lịch tổng duyệt thất bại: " + ex.getMessage());
@@ -728,39 +1155,113 @@ public class ExtendedModulePanel extends JPanel {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
                     selectedId[0] = (int) model.getValueAt(row, 0);
-                    thoiGian.setText(String.valueOf(model.getValueAt(row, 1)).replace('T', ' '));
+                    LichTongDuyet selected = lichTongDuyetService.findById(selectedId[0]);
+                    if (selected != null && selected.getThoiGianDuyet() != null) {
+                        thoiGian.setDateTimePermissive(selected.getThoiGianDuyet());
+                    }
                     noiDung.setText(String.valueOf(model.getValueAt(row, 2)));
-                    trangThai.setText(String.valueOf(model.getValueAt(row, 3)));
-                    maSK.setText(String.valueOf(model.getValueAt(row, 4)));
+                    String trangThai = String.valueOf(model.getValueAt(row, 3));
+                    cbTrangThai.setSelectedItem(trangThai);
+                    if (selected != null && selected.getSuKienTiec() != null) {
+                        selectComboById(cbSuKien, selected.getSuKienTiec().getMaSK());
+                    }
                 }
             }
         });
 
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
         return wrapCrud(table, load,
-                new String[]{"Thời gian (yyyy-MM-dd HH:mm)", "Nội dung duyệt", "Trạng thái", "Mã sự kiện"},
-                new JComponent[]{thoiGian, noiDung, trangThai, maSK}, add, delete, update);
+                new String[]{"Thời gian tổng duyệt", "Nội dung duyệt", "Trạng thái", "Sự kiện"},
+                new JComponent[]{thoiGian, noiDung, cbTrangThai, cbSuKien}, add, delete, update, reset);
     }
 
     private JComponent createSuDungDaoCuTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã hạng mục", "Mã đạo cụ", "Số lượng sử dụng"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Hạng mục", "Đạo cụ", "Số lượng sử dụng"}, 0);
         JTable table = new JTable(model);
-        JTextField maHM = new JTextField();
-        JTextField maDaoCu = new JTextField();
+        JComboBox<IdNameItem> cbHangMuc = new JComboBox<>();
+        JComboBox<IdNameItem> cbDaoCu = new JComboBox<>();
         JTextField soLuong = new JTextField("1");
+
+        Runnable loadOptions = () -> {
+            Object oldHM = cbHangMuc.getSelectedItem();
+            Object oldDC = cbDaoCu.getSelectedItem();
+
+            cbHangMuc.removeAllItems();
+            for (HangMucKichBan hm : hangMucService.findAll()) {
+                String name = hm.getTenHM();
+                if (hm.getSuKienTiec() != null) {
+                    name += " - " + hm.getSuKienTiec().getTenSuKien();
+                }
+                cbHangMuc.addItem(new IdNameItem(hm.getMaHM(), name));
+            }
+
+            cbDaoCu.removeAllItems();
+            for (DaoCu dc : daoCuService.findAll()) {
+                cbDaoCu.addItem(new IdNameItem(dc.getMaDaoCu(), dc.getTenDaoCu()));
+            }
+
+            if (oldHM instanceof IdNameItem hmItem) {
+                selectComboById(cbHangMuc, hmItem.id);
+            }
+            if (oldDC instanceof IdNameItem dcItem) {
+                selectComboById(cbDaoCu, dcItem.id);
+            }
+            if (cbHangMuc.getSelectedItem() == null && cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+            if (cbDaoCu.getSelectedItem() == null && cbDaoCu.getItemCount() > 0) {
+                cbDaoCu.setSelectedIndex(0);
+            }
+        };
+
+        Runnable resetForm = () -> {
+            table.clearSelection();
+            soLuong.setText("1");
+            if (cbHangMuc.getItemCount() > 0) {
+                cbHangMuc.setSelectedIndex(0);
+            }
+            if (cbDaoCu.getItemCount() > 0) {
+                cbDaoCu.setSelectedIndex(0);
+            }
+            soLuong.requestFocusInWindow();
+        };
 
         Runnable load = () -> {
             model.setRowCount(0);
             for (SuDungDaoCu item : suDungDaoCuService.findAll()) {
-                model.addRow(new Object[]{item.getId().getMaHM(), item.getId().getMaDaoCu(), item.getSoLuongSuDung()});
+                String hm = item.getHangMuc() != null ? item.getHangMuc().getTenHM() : "N/A";
+                String dc = item.getDaoCu() != null ? item.getDaoCu().getTenDaoCu() : "N/A";
+                model.addRow(new Object[]{hm, dc, item.getSoLuongSuDung()});
             }
+            loadOptions.run();
         };
 
         JButton addOrUpdate = new JButton("Lưu/Cập nhật");
         styleUpdateButton(addOrUpdate);
         addOrUpdate.addActionListener(e -> {
             try {
-                int hangMucId = Integer.parseInt(maHM.getText().trim());
-                int daoCuId = Integer.parseInt(maDaoCu.getText().trim());
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                IdNameItem daoCuItem = (IdNameItem) cbDaoCu.getSelectedItem();
+                if (hangMucItem == null || daoCuItem == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn hạng mục và đạo cụ.");
+                    return;
+                }
+                int hangMucId = hangMucItem.id;
+                int daoCuId = daoCuItem.id;
+                int soLuongInt = Integer.parseInt(soLuong.getText().trim());
+                if (soLuongInt <= 0) {
+                    JOptionPane.showMessageDialog(this, "Số lượng sử dụng phải lớn hơn 0.");
+                    return;
+                }
+
                 HangMucKichBan hm = hangMucService.findById(hangMucId);
                 DaoCu dc = daoCuService.findById(daoCuId);
                 if (hm == null || dc == null) {
@@ -773,12 +1274,14 @@ public class ExtendedModulePanel extends JPanel {
                     SuDungDaoCu item = new SuDungDaoCu();
                     item.setHangMuc(hm);
                     item.setDaoCu(dc);
-                    item.setSoLuongSuDung(Integer.parseInt(soLuong.getText().trim()));
+                    item.setSoLuongSuDung(soLuongInt);
                     suDungDaoCuService.save(item);
                 } else {
-                    existing.setSoLuongSuDung(Integer.parseInt(soLuong.getText().trim()));
+                    existing.setSoLuongSuDung(soLuongInt);
                     suDungDaoCuService.update(existing);
                 }
+                JOptionPane.showMessageDialog(this, "Lưu sử dụng đạo cụ thành công.");
+                resetForm.run();
                 load.run();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Lưu sử dụng đạo cụ thất bại: " + ex.getMessage());
@@ -789,17 +1292,57 @@ public class ExtendedModulePanel extends JPanel {
         styleDeleteButton(delete);
         delete.addActionListener(e -> {
             int row = table.getSelectedRow();
-            if (row >= 0) {
-                int hangMucId = (int) model.getValueAt(row, 0);
-                int daoCuId = (int) model.getValueAt(row, 1);
-                suDungDaoCuService.delete(new SuDungDaoCuId(hangMucId, daoCuId));
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa.");
+                return;
+            }
+            try {
+                IdNameItem hangMucItem = (IdNameItem) cbHangMuc.getSelectedItem();
+                IdNameItem daoCuItem = (IdNameItem) cbDaoCu.getSelectedItem();
+                if (hangMucItem == null || daoCuItem == null) {
+                    JOptionPane.showMessageDialog(this, "Không xác định được bản ghi cần xóa.");
+                    return;
+                }
+                suDungDaoCuService.delete(new SuDungDaoCuId(hangMucItem.id, daoCuItem.id));
+                JOptionPane.showMessageDialog(this, "Xóa sử dụng đạo cụ thành công.");
+                resetForm.run();
                 load.run();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Xóa sử dụng đạo cụ thất bại: " + ex.getMessage());
             }
         });
 
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    SuDungDaoCu selected = suDungDaoCuService.findAll().stream()
+                            .filter(x -> x.getHangMuc() != null && x.getDaoCu() != null)
+                            .filter(x -> String.valueOf(model.getValueAt(row, 0)).equals(x.getHangMuc().getTenHM()))
+                            .filter(x -> String.valueOf(model.getValueAt(row, 1)).equals(x.getDaoCu().getTenDaoCu()))
+                            .findFirst()
+                            .orElse(null);
+                    if (selected != null) {
+                        selectComboById(cbHangMuc, selected.getId().getMaHM());
+                        selectComboById(cbDaoCu, selected.getId().getMaDaoCu());
+                        soLuong.setText(String.valueOf(selected.getSoLuongSuDung()));
+                    }
+                }
+            }
+        });
+
+        JButton reset = new JButton("Làm mới");
+        reset.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#F3F4F6;" +
+                        "foreground:#111111;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        reset.addActionListener(e -> resetForm.run());
+
         return wrapCrud(table, load,
-                new String[]{"Mã hạng mục", "Mã đạo cụ", "Số lượng sử dụng"},
-                new JComponent[]{maHM, maDaoCu, soLuong}, addOrUpdate, delete);
+                new String[]{"Hạng mục", "Đạo cụ", "Số lượng sử dụng"},
+                new JComponent[]{cbHangMuc, cbDaoCu, soLuong}, addOrUpdate, delete, reset);
     }
 
     private JComponent wrapCrud(
@@ -838,15 +1381,6 @@ public class ExtendedModulePanel extends JPanel {
             form.add(fields[i], "growx");
         }
 
-        JButton refresh = new JButton("Tải lại");
-        refresh.putClientProperty(FlatClientProperties.STYLE,
-                "arc:10;" +
-                        "background:#111111;" +
-                        "foreground:#FFFFFF;" +
-                        "focusWidth:0;" +
-                        "borderWidth:0");
-        refresh.addActionListener(e -> load.run());
-
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttons.setBackground(CARD_BG);
         buttons.add(add);
@@ -856,7 +1390,6 @@ public class ExtendedModulePanel extends JPanel {
                 buttons.add(extra);
             }
         }
-        buttons.add(refresh);
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(CARD_BG);
@@ -881,6 +1414,45 @@ public class ExtendedModulePanel extends JPanel {
 
         load.run();
         return panel;
+    }
+
+    private void selectComboById(JComboBox<IdNameItem> comboBox, int id) {
+        for (int i = 0; i < comboBox.getItemCount(); i++) {
+            IdNameItem item = comboBox.getItemAt(i);
+            if (item != null && item.id == id) {
+                comboBox.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+    private boolean existsAssignment(DefaultTableModel model, int maHM, int maNS, int excludeRow) {
+        for (int i = 0; i < model.getRowCount(); i++) {
+            if (i == excludeRow) {
+                continue;
+            }
+            int existingHM = (int) model.getValueAt(i, 2);
+            int existingNS = (int) model.getValueAt(i, 4);
+            if (existingHM == maHM && existingNS == maNS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static class IdNameItem {
+        private final int id;
+        private final String name;
+
+        private IdNameItem(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name + " (ID: " + id + ")";
+        }
     }
 
     private void styleAddButton(JButton button) {

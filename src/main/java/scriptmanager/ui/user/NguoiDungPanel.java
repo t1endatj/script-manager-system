@@ -11,6 +11,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -244,7 +245,7 @@ public class NguoiDungPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(NguoiDungPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(NguoiDungPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
@@ -288,7 +289,7 @@ public class NguoiDungPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(NguoiDungPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(NguoiDungPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
@@ -317,10 +318,22 @@ public class NguoiDungPanel extends JPanel {
                         loadData();
                         clearForm();
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(NguoiDungPanel.this, "Lỗi: " + ex.getMessage());
+                        JOptionPane.showMessageDialog(NguoiDungPanel.this, resolveErrorMessage(ex));
                     }
                 }
             }.execute();
         }
+    }
+
+    private String resolveErrorMessage(Exception ex) {
+        Throwable root = ex;
+        if (ex instanceof ExecutionException && ex.getCause() != null) {
+            root = ex.getCause();
+        }
+        String message = root.getMessage();
+        if (message == null || message.isBlank()) {
+            return "Thao tác thất bại. Vui lòng kiểm tra lại dữ liệu.";
+        }
+        return message;
     }
 }

@@ -9,6 +9,7 @@ import scriptmanager.dao.HangMucKichBanDaoImpl;
 import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.HangMucKichBan;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,11 +30,19 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
     }
 
     @Override
+    public List<HangMucKichBan> findBySuKienId(int suKienId) {
+        return findAll().stream()
+                .filter(hm -> hm.getSuKienTiec() != null && hm.getSuKienTiec().getMaSK() == suKienId)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public HangMucKichBan findById(int id) { return dao.findById(id); }
 
     @Override
     public void save(HangMucKichBan item) {
         enforceOwnership(item);
+        // Bắt buộc đúng rule dữ liệu trước khi lưu.
         validate(item);
         dao.save(item);
     }
@@ -41,6 +50,7 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
     @Override
     public void update(HangMucKichBan item) {
         enforceOwnership(item);
+        // Áp lại rule khi cập nhật để tránh dữ liệu bẩn.
         validate(item);
         dao.update(item);
     }
@@ -66,6 +76,7 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
             return;
         }
 
+        // USER chỉ được thao tác hạng mục thuộc sự kiện mình phụ trách.
         Integer currentUserId = UserSession.getCurrentUserId();
         if (currentUserId == null || item == null || item.getSuKienTiec() == null
                 || item.getSuKienTiec().getNguoiDung() == null
@@ -87,8 +98,24 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
             throw new IllegalArgumentException("Thời gian bắt đầu và kết thúc không được để trống.");
         }
 
+        // Mốc bắt đầu luôn phải nhỏ hơn mốc kết thúc.
         if (!item.getTgBatDau().isBefore(item.getTgKetThuc())) {
             throw new IllegalArgumentException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+        }
+
+        // Hạng mục phải bám theo thời điểm tổ chức sự kiện để tránh lệch lịch.
+        LocalDateTime eventTime = item.getSuKienTiec().getThoiGianToChuc();
+        if (eventTime == null) {
+            throw new IllegalArgumentException("Sự kiện chưa có thời gian tổ chức hợp lệ.");
+        }
+
+        if (!item.getTgBatDau().toLocalDate().equals(eventTime.toLocalDate())
+                || !item.getTgKetThuc().toLocalDate().equals(eventTime.toLocalDate())) {
+            throw new IllegalArgumentException("Thời gian hạng mục phải cùng ngày với thời gian tổ chức sự kiện.");
+        }
+
+        if (item.getTgBatDau().isBefore(eventTime)) {
+            throw new IllegalArgumentException("Thời gian bắt đầu hạng mục không được trước thời gian tổ chức sự kiện.");
         }
 
         item.setTenHM(item.getTenHM().trim());
