@@ -206,10 +206,10 @@ public class Dashboard extends JPanel {
         JPanel row = new JPanel(new MigLayout("fillx,insets 0,gap 12", "[grow][grow][grow][grow]", "[]"));
         row.setOpaque(false);
 
-        row.add(createMetricCard("Sự kiện sắp tới", String.valueOf(stats.getSuKienSapToi()), "Theo thời gian hiện tại", TONE_900), "growx");
-        row.add(createMetricCard("Tổng duyệt chưa xong", String.valueOf(stats.getTongDuyetChuaXong()), "Cần ưu tiên hôm nay", TONE_800), "growx");
-        row.add(createMetricCard("Thiết bị nguy cơ thiếu", String.valueOf(stats.getThietBiNguyCoThieu()), "Ngưỡng kiểm tra: < 5", TONE_700), "growx");
-        row.add(createMetricCard("Nhân sự đã phân công", String.valueOf(stats.getNhanSuDaPhanCong()), "Đếm theo nhân sự phân công", TONE_500), "growx");
+        row.add(createMetricCard("Sự kiện sắp tới", String.valueOf(stats.getSuKienSapToi()), "Theo thời gian hiện tại", TEXT_DARK), "growx");
+        row.add(createMetricCard("Tổng duyệt chưa xong", String.valueOf(stats.getTongDuyetChuaXong()), "Cần ưu tiên hôm nay", TEXT_DARK), "growx");
+        row.add(createMetricCard("Thiết bị nguy cơ thiếu", String.valueOf(stats.getThietBiNguyCoThieu()), "Ngưỡng kiểm tra: < 5", TEXT_DARK), "growx");
+        row.add(createMetricCard("Nhân sự đã phân công", String.valueOf(stats.getNhanSuDaPhanCong()), "Đếm theo nhân sự phân công", TEXT_DARK), "growx");
 
         return row;
     }
@@ -221,7 +221,7 @@ public class Dashboard extends JPanel {
                 this.stats = data;
             }
             this.timelineItems = dashboardService.getLatestRehearsals(6);
-            this.resourceAlerts = dashboardService.getResourceAlerts(4);
+            this.resourceAlerts = dashboardService.getResourceAlerts(8);
             this.taskItems = dashboardService.getPendingTasks(8);
         } catch (Exception ignored) {
             this.timelineItems = new ArrayList<>();
@@ -328,7 +328,8 @@ public class Dashboard extends JPanel {
         } else {
             for (int i = 0; i < resourceAlerts.size(); i++) {
                 DashboardResourceAlertDTO alert = resourceAlerts.get(i);
-                String status = "Đã đặt " + alert.getDaDat() + "/" + alert.getTongSo();
+                int conLai = Math.max(0, alert.getTongSo() - alert.getDaDat());
+                String status = "Đã dùng " + alert.getDaDat() + "/" + alert.getTongSo() + " - Còn " + conLai;
                 Color accent = pickAlertColor(alert.getPhanTram());
                 String gap = i == 0 ? "growx" : "growx,gapy 8 0";
                 panel.add(createWarningItem(alert.getTenTaiNguyen(), status, alert.getPhanTram(), accent), gap);

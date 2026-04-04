@@ -81,12 +81,6 @@ public class LichTongDuyet {
     }
 
     public void setSuKienTiec(SuKienTiec suKienTiec) {
-        if (this.suKienTiec != null) {
-            this.suKienTiec.getLichTongDuyets().remove(this);
-        }
         this.suKienTiec = suKienTiec;
-        if (suKienTiec != null) {
-            suKienTiec.getLichTongDuyets().add(this);
-        }
     }
 }

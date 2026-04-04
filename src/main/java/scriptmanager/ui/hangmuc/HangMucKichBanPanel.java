@@ -19,6 +19,7 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -153,6 +154,7 @@ public class HangMucKichBanPanel extends JPanel {
         txtTenHM.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên hạng mục kịch bản");
 
         cbSuKien = new JComboBox<>();
+        cbSuKien.addActionListener(e -> applyEventTimeDefaults(false));
 
         dtTgBatDau = new DateTimePicker();
         dtTgBatDau.setBackground(Color.WHITE);
@@ -255,6 +257,7 @@ public class HangMucKichBanPanel extends JPanel {
                     if (filterEventId != null) {
                         selectEvent(filterEventId);
                     }
+                    applyEventTimeDefaults(true);
                 } catch (Exception ex) {
                     LOGGER.log(Level.WARNING, "Lỗi tải danh sách sự kiện cho combobox hạng mục", ex);
                 }
@@ -347,6 +350,7 @@ public class HangMucKichBanPanel extends JPanel {
         } else if (cbSuKien.getItemCount() > 0) {
             cbSuKien.setSelectedIndex(0);
         }
+        applyEventTimeDefaults(true);
         table.clearSelection();
     }
 
@@ -394,7 +398,7 @@ public class HangMucKichBanPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(HangMucKichBanPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(HangMucKichBanPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
@@ -451,10 +455,48 @@ public class HangMucKichBanPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(HangMucKichBanPanel.this, "Lỗi: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(HangMucKichBanPanel.this, resolveErrorMessage(ex));
                 }
             }
         }.execute();
+    }
+
+    private void applyEventTimeDefaults(boolean force) {
+        if (currentId != null) {
+            return;
+        }
+
+        SuKienItem selected = (SuKienItem) cbSuKien.getSelectedItem();
+        if (selected == null) {
+            return;
+        }
+
+        SuKienTiec suKien = suKienTiecService.findById(selected.id);
+        if (suKien == null || suKien.getThoiGianToChuc() == null) {
+            return;
+        }
+
+        LocalDateTime eventTime = suKien.getThoiGianToChuc();
+        LocalDateTime currentStart = dtTgBatDau.getDateTimePermissive();
+        LocalDateTime currentEnd = dtTgKetThuc.getDateTimePermissive();
+
+        if (force || currentStart == null || currentStart.toLocalDate().isBefore(LocalDateTime.now().toLocalDate())) {
+            dtTgBatDau.setDateTimePermissive(eventTime);
+        }
+        if (force || currentEnd == null || currentEnd.toLocalDate().isBefore(LocalDateTime.now().toLocalDate())) {
+            dtTgKetThuc.setDateTimePermissive(eventTime.plusMinutes(30));
+        }
+    }
+
+    private String resolveErrorMessage(Exception ex) {
+        Throwable root = ex;
+        if (ex instanceof ExecutionException && ex.getCause() != null) {
+            root = ex.getCause();
+        }
+        String message = root.getMessage();
+        return (message == null || message.isBlank())
+                ? "Thao tác thất bại. Vui lòng kiểm tra dữ liệu và thử lại."
+                : message;
     }
 
     private void deleteHM() {

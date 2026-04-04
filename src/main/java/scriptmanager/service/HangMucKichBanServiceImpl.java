@@ -118,7 +118,23 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
             throw new BusinessRuleException("Thời gian bắt đầu hạng mục không được trước thời gian tổ chức sự kiện.");
         }
 
+        // Không cho phép tạo hạng mục trùng trong cùng một sự kiện.
+        boolean duplicated = findBySuKienId(item.getSuKienTiec().getMaSK()).stream()
+                .filter(existing -> item.getMaHM() <= 0 || existing.getMaHM() != item.getMaHM())
+                .anyMatch(existing -> normalize(existing.getTenHM()).equals(normalize(item.getTenHM()))
+                        && existing.getTgBatDau() != null
+                        && existing.getTgKetThuc() != null
+                        && existing.getTgBatDau().equals(item.getTgBatDau())
+                        && existing.getTgKetThuc().equals(item.getTgKetThuc()));
+        if (duplicated) {
+            throw new BusinessRuleException("Hạng mục đã tồn tại trong sự kiện với cùng tên và khung thời gian.");
+        }
+
         item.setTenHM(item.getTenHM().trim());
         item.setNoiDung(item.getNoiDung() == null ? "" : item.getNoiDung().trim());
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
     }
 }

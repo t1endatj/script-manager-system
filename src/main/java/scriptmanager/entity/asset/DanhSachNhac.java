@@ -93,12 +93,6 @@ public class DanhSachNhac {
     }
 
     public void setHangMuc(HangMucKichBan hangMuc) {
-        if (this.hangMuc != null) {
-            this.hangMuc.getDanhSachNhacs().remove(this);
-        }
         this.hangMuc = hangMuc;
-        if (hangMuc != null) {
-            hangMuc.getDanhSachNhacs().add(this);
-        }
     }
 }

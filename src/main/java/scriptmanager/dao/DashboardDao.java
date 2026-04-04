@@ -54,7 +54,7 @@ public class DashboardDao {
 
     public List<DashboardResourceAlertDTO> getResourceAlerts(int limit) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<DashboardResourceAlertDTO> items = new ArrayList<>();
+            List<AlertRow> rows = new ArrayList<>();
 
             List<Object[]> thietBiRows = session.createQuery(
                             "SELECT t.tenTB, COALESCE(SUM(pc.soLuongSuDung), 0), t.soLuong " +
@@ -69,7 +69,7 @@ public class DashboardDao {
                 if (tongSo <= 0) {
                     continue;
                 }
-                items.add(new DashboardResourceAlertDTO("Thiết bị: " + row[0], daDat, tongSo));
+                rows.add(new AlertRow("Thiết bị: " + row[0], daDat, tongSo));
             }
 
             List<Object[]> daoCuRows = session.createQuery(
@@ -85,16 +85,58 @@ public class DashboardDao {
                 if (tongSo <= 0) {
                     continue;
                 }
-                items.add(new DashboardResourceAlertDTO("Đạo cụ: " + row[0], daDat, tongSo));
+                rows.add(new AlertRow("Đạo cụ: " + row[0], daDat, tongSo));
             }
 
-            items.sort(Comparator
-                    .comparingInt(DashboardResourceAlertDTO::getPhanTram)
+            rows.sort(Comparator
+                    .comparingInt(AlertRow::getMucDoCanhBao)
                     .reversed()
-                    .thenComparingInt(DashboardResourceAlertDTO::getDaDat)
-                    .reversed());
+                    .thenComparingInt(AlertRow::getConLai)
+            );
 
-            return items.size() <= limit ? items : new ArrayList<>(items.subList(0, limit));
+            List<DashboardResourceAlertDTO> result = rows.stream()
+                    .filter(AlertRow::isWarning)
+                    .map(row -> new DashboardResourceAlertDTO(row.tenTaiNguyen, row.daDat, row.tongSo))
+                    .toList();
+            return result.size() <= limit ? result : new ArrayList<>(result.subList(0, limit));
+        }
+    }
+
+    private static class AlertRow {
+        private final String tenTaiNguyen;
+        private final int daDat;
+        private final int tongSo;
+
+        private AlertRow(String tenTaiNguyen, int daDat, int tongSo) {
+            this.tenTaiNguyen = tenTaiNguyen;
+            this.daDat = daDat;
+            this.tongSo = tongSo;
+        }
+
+        private int getConLai() {
+            return Math.max(0, tongSo - daDat);
+        }
+
+        private boolean isWarning() {
+            int conLai = tongSo - daDat;
+            return daDat == 0 || conLai <= 2 || daDat > tongSo;
+        }
+
+        private int getMucDoCanhBao() {
+            int conLai = tongSo - daDat;
+            if (daDat > tongSo) {
+                return 300 + (daDat - tongSo);
+            }
+            if (conLai <= 0) {
+                return 250;
+            }
+            if (conLai <= 2) {
+                return 200 - conLai;
+            }
+            if (daDat == 0) {
+                return 120;
+            }
+            return 0;
         }
     }
 

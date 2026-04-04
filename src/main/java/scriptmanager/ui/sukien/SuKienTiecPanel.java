@@ -296,8 +296,6 @@ public class SuKienTiecPanel extends JPanel {
                     loadData();
                     clearForm();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(SuKienTiecPanel.this, "Lỗi: " + ex.getMessage());
                     JOptionPane.showMessageDialog(SuKienTiecPanel.this, resolveErrorMessage(ex));
                 }
             }

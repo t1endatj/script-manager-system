@@ -33,10 +33,7 @@ public class DanhSachNhacService {
 
     public void delete(int id) {
         AuthorizationService.requireManagerOrAdmin();
-        DanhSachNhac item = danhSachNhacDao.findById(id);
-        if (item != null) {
-            danhSachNhacDao.delete(item);
-        }
+        danhSachNhacDao.deleteById(id);
     }
 }
 

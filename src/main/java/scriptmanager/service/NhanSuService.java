@@ -40,6 +40,10 @@ public class NhanSuService {
         AuthorizationService.requireManagerOrAdmin();
         NhanSu item = nhanSuDao.findById(id);
         if (item != null) {
+            // Không cho xóa nhân sự nếu vẫn đang được phân công trong sự kiện/hạng mục.
+            if (nhanSuDao.hasAssignments(id)) {
+                throw new BusinessRuleException("Không thể xóa nhân sự đang phục vụ sự kiện. Vui lòng gỡ phân công trước.");
+            }
             nhanSuDao.delete(item);
         }
     }

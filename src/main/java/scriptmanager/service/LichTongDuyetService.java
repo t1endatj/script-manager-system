@@ -53,7 +53,7 @@ public class LichTongDuyetService {
         }
         LichTongDuyet item = lichTongDuyetDao.findById(id);
         if (item != null) {
-            lichTongDuyetDao.delete(item);
+            lichTongDuyetDao.deleteById(id);
         }
     }
 
