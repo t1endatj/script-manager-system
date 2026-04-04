@@ -3,6 +3,8 @@ package scriptmanager.service;
 import scriptmanager.dao.NhanSuDao;
 import scriptmanager.dao.NhanSuDaoImpl;
 import scriptmanager.entity.user.NhanSu;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.util.List;
 import java.util.Locale;
@@ -44,23 +46,23 @@ public class NhanSuService {
 
     private void validateForSave(NhanSu item) {
         if (item == null || item.getTenNS() == null || item.getTenNS().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên nhân sự không được để trống.");
+            throw new ValidationException("Tên nhân sự không được để trống.");
         }
 
         normalize(item);
         if (isDuplicate(item, null)) {
-            throw new IllegalArgumentException("Nhân sự đã tồn tại.");
+            throw new BusinessRuleException("Nhân sự đã tồn tại.");
         }
     }
 
     private void validateForUpdate(NhanSu item) {
         if (item == null || item.getTenNS() == null || item.getTenNS().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên nhân sự không được để trống.");
+            throw new ValidationException("Tên nhân sự không được để trống.");
         }
 
         normalize(item);
         if (isDuplicate(item, item.getMaNS())) {
-            throw new IllegalArgumentException("Nhân sự đã tồn tại.");
+            throw new BusinessRuleException("Nhân sự đã tồn tại.");
         }
     }
 
@@ -91,4 +93,3 @@ public class NhanSuService {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }
-

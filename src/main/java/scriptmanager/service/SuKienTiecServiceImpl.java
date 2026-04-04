@@ -8,6 +8,9 @@ import scriptmanager.dao.SuKienTiecDaoImpl;
 import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.LichTongDuyet;
 import scriptmanager.entity.core.SuKienTiec;
+import scriptmanager.exception.AuthorizationException;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.util.List;
 
@@ -60,7 +63,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
             Integer currentUserId = UserSession.getCurrentUserId();
             if (existing == null || currentUserId == null || existing.getNguoiDung() == null
                     || existing.getNguoiDung().getMaND() != currentUserId) {
-                throw new SecurityException("Bạn không có quyền xóa sự kiện này.");
+                throw new AuthorizationException("Bạn không có quyền xóa sự kiện này.");
             }
         }
         dao.deleteById(id);
@@ -74,7 +77,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
         Integer currentUserId = UserSession.getCurrentUserId();
         if (currentUserId == null || item == null || item.getNguoiDung() == null
                 || item.getNguoiDung().getMaND() != currentUserId) {
-            throw new SecurityException("Bạn chỉ có thể thao tác với sự kiện của chính mình.");
+            throw new AuthorizationException("Bạn chỉ có thể thao tác với sự kiện của chính mình.");
         }
     }
 
@@ -85,23 +88,23 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
 
     private void validateTime(SuKienTiec item) {
         if (item == null) {
-            throw new IllegalArgumentException("Dữ liệu sự kiện không hợp lệ.");
+            throw new ValidationException("Dữ liệu sự kiện không hợp lệ.");
         }
 
         LocalDateTime thoiGian = item.getThoiGianToChuc();
         if (thoiGian == null) {
-            throw new IllegalArgumentException("Thời gian tổ chức không được để trống.");
+            throw new ValidationException("Thời gian tổ chức không được để trống.");
         }
 
         // Không cho phép tạo/sửa sự kiện lùi về quá khứ.
         if (thoiGian.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Không thể thêm/cập nhật sự kiện có thời gian trong quá khứ.");
+            throw new BusinessRuleException("Không thể thêm/cập nhật sự kiện có thời gian trong quá khứ.");
         }
     }
 
     private void validateDuplicate(SuKienTiec item, int excludeId) {
         if (item == null || item.getNguoiDung() == null) {
-            throw new IllegalArgumentException("Dữ liệu sự kiện không hợp lệ.");
+            throw new ValidationException("Dữ liệu sự kiện không hợp lệ.");
         }
 
         boolean duplicated = isDuplicate(
@@ -114,7 +117,7 @@ public class SuKienTiecServiceImpl implements SuKienTiecService {
 
         // Chặn trùng đầy đủ theo tên + thời gian + địa điểm + phụ trách.
         if (duplicated) {
-            throw new IllegalArgumentException("Sự kiện đã tồn tại (trùng tên, thời gian, địa điểm, người phụ trách).");
+            throw new BusinessRuleException("Sự kiện đã tồn tại (trùng tên, thời gian, địa điểm, người phụ trách).");
         }
     }
 

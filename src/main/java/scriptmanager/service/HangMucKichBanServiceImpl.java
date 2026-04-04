@@ -1,13 +1,13 @@
 package scriptmanager.service;
 
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import scriptmanager.config.HibernateUtil;
 import scriptmanager.config.UserSession;
 import scriptmanager.dao.HangMucKichBanDao;
 import scriptmanager.dao.HangMucKichBanDaoImpl;
-import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.HangMucKichBan;
+import scriptmanager.enums.UserRole;
+import scriptmanager.exception.AuthorizationException;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -62,7 +62,7 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
             Integer currentUserId = UserSession.getCurrentUserId();
             if (existing == null || existing.getSuKienTiec() == null || existing.getSuKienTiec().getNguoiDung() == null
                     || currentUserId == null || existing.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
-                throw new SecurityException("Bạn không có quyền xóa hạng mục này.");
+                throw new AuthorizationException("Bạn không có quyền xóa hạng mục này.");
             }
         }
         HangMucKichBan item = dao.findById(id);
@@ -81,41 +81,41 @@ public class HangMucKichBanServiceImpl implements HangMucKichBanService {
         if (currentUserId == null || item == null || item.getSuKienTiec() == null
                 || item.getSuKienTiec().getNguoiDung() == null
                 || item.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
-            throw new SecurityException("Bạn chỉ có thể thao tác hạng mục của sự kiện do mình phụ trách.");
+            throw new AuthorizationException("Bạn chỉ có thể thao tác hạng mục của sự kiện do mình phụ trách.");
         }
     }
 
     private void validate(HangMucKichBan item) {
         if (item == null || item.getSuKienTiec() == null) {
-            throw new IllegalArgumentException("Dữ liệu hạng mục không hợp lệ.");
+            throw new ValidationException("Dữ liệu hạng mục không hợp lệ.");
         }
 
         if (item.getTenHM() == null || item.getTenHM().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên hạng mục không được để trống.");
+            throw new ValidationException("Tên hạng mục không được để trống.");
         }
 
         if (item.getTgBatDau() == null || item.getTgKetThuc() == null) {
-            throw new IllegalArgumentException("Thời gian bắt đầu và kết thúc không được để trống.");
+            throw new ValidationException("Thời gian bắt đầu và kết thúc không được để trống.");
         }
 
         // Mốc bắt đầu luôn phải nhỏ hơn mốc kết thúc.
         if (!item.getTgBatDau().isBefore(item.getTgKetThuc())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+            throw new BusinessRuleException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
         }
 
         // Hạng mục phải bám theo thời điểm tổ chức sự kiện để tránh lệch lịch.
         LocalDateTime eventTime = item.getSuKienTiec().getThoiGianToChuc();
         if (eventTime == null) {
-            throw new IllegalArgumentException("Sự kiện chưa có thời gian tổ chức hợp lệ.");
+            throw new ValidationException("Sự kiện chưa có thời gian tổ chức hợp lệ.");
         }
 
         if (!item.getTgBatDau().toLocalDate().equals(eventTime.toLocalDate())
                 || !item.getTgKetThuc().toLocalDate().equals(eventTime.toLocalDate())) {
-            throw new IllegalArgumentException("Thời gian hạng mục phải cùng ngày với thời gian tổ chức sự kiện.");
+            throw new BusinessRuleException("Thời gian hạng mục phải cùng ngày với thời gian tổ chức sự kiện.");
         }
 
         if (item.getTgBatDau().isBefore(eventTime)) {
-            throw new IllegalArgumentException("Thời gian bắt đầu hạng mục không được trước thời gian tổ chức sự kiện.");
+            throw new BusinessRuleException("Thời gian bắt đầu hạng mục không được trước thời gian tổ chức sự kiện.");
         }
 
         item.setTenHM(item.getTenHM().trim());

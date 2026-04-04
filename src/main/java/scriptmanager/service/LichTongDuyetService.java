@@ -3,8 +3,11 @@ package scriptmanager.service;
 import scriptmanager.config.UserSession;
 import scriptmanager.dao.LichTongDuyetDao;
 import scriptmanager.dao.LichTongDuyetDaoImpl;
-import scriptmanager.enums.UserRole;
 import scriptmanager.entity.core.LichTongDuyet;
+import scriptmanager.enums.UserRole;
+import scriptmanager.exception.AuthorizationException;
+import scriptmanager.exception.BusinessRuleException;
+import scriptmanager.exception.ValidationException;
 
 import java.util.List;
 
@@ -45,7 +48,7 @@ public class LichTongDuyetService {
             Integer currentUserId = UserSession.getCurrentUserId();
             if (existing == null || existing.getSuKienTiec() == null || existing.getSuKienTiec().getNguoiDung() == null
                     || currentUserId == null || existing.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
-                throw new SecurityException("Bạn không có quyền xóa lịch tổng duyệt này.");
+                throw new AuthorizationException("Bạn không có quyền xóa lịch tổng duyệt này.");
             }
         }
         LichTongDuyet item = lichTongDuyetDao.findById(id);
@@ -63,26 +66,25 @@ public class LichTongDuyetService {
         if (currentUserId == null || item == null || item.getSuKienTiec() == null
                 || item.getSuKienTiec().getNguoiDung() == null
                 || item.getSuKienTiec().getNguoiDung().getMaND() != currentUserId) {
-            throw new SecurityException("Bạn chỉ có thể thao tác lịch tổng duyệt của sự kiện do mình phụ trách.");
+            throw new AuthorizationException("Bạn chỉ có thể thao tác lịch tổng duyệt của sự kiện do mình phụ trách.");
         }
     }
 
     private void validate(LichTongDuyet item) {
         if (item == null || item.getSuKienTiec() == null) {
-            throw new IllegalArgumentException("Dữ liệu lịch tổng duyệt không hợp lệ.");
+            throw new ValidationException("Dữ liệu lịch tổng duyệt không hợp lệ.");
         }
 
         if (item.getThoiGianDuyet() == null) {
-            throw new IllegalArgumentException("Thời gian duyệt không được để trống.");
+            throw new ValidationException("Thời gian duyệt không được để trống.");
         }
 
         if (item.getSuKienTiec().getThoiGianToChuc() != null
                 && item.getThoiGianDuyet().isAfter(item.getSuKienTiec().getThoiGianToChuc())) {
-            throw new IllegalArgumentException("Thời gian tổng duyệt phải trước hoặc bằng thời gian tổ chức sự kiện.");
+            throw new BusinessRuleException("Thời gian tổng duyệt phải trước hoặc bằng thời gian tổ chức sự kiện.");
         }
 
         item.setNoiDungDuyet(item.getNoiDungDuyet() == null ? "" : item.getNoiDungDuyet().trim());
         item.setTrangThai(item.getTrangThai() == null ? "" : item.getTrangThai().trim());
     }
 }
-
