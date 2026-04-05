@@ -17,10 +17,13 @@ import scriptmanager.entity.user.NhanSu;
 import scriptmanager.service.*;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.HierarchyEvent;
+import java.io.File;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -868,8 +871,21 @@ public class ExtendedModulePanel extends JPanel {
         JTextField caSi = new JTextField();
         JTextField thoiLuong = new JTextField();
         JTextField fileNhac = new JTextField();
+        JButton chooseFile = new JButton("Chọn file nhạc");
+        JButton downloadFile = new JButton("Tải file");
         JComboBox<IdNameItem> cbHangMuc = new JComboBox<>();
         final int[] selectedId = {-1};
+        final byte[][] selectedFileBytes = {null};
+        final String[] selectedFileName = {""};
+        final String[] selectedMimeType = {""};
+
+        fileNhac.setEditable(false);
+        fileNhac.setToolTipText("Chọn file .mp3 hoặc .mp4 từ máy để lưu vào cơ sở dữ liệu");
+
+        JPanel fileNhacPanel = new JPanel(new BorderLayout(8, 0));
+        fileNhacPanel.setOpaque(false);
+        fileNhacPanel.add(fileNhac, BorderLayout.CENTER);
+        fileNhacPanel.add(chooseFile, BorderLayout.EAST);
 
         Runnable loadHangMucOptions = () -> {
             Object old = cbHangMuc.getSelectedItem();
@@ -891,6 +907,9 @@ public class ExtendedModulePanel extends JPanel {
 
         Runnable resetForm = () -> {
             selectedId[0] = -1;
+            selectedFileBytes[0] = null;
+            selectedFileName[0] = "";
+            selectedMimeType[0] = "";
             ten.setText("");
             caSi.setText("");
             thoiLuong.setText("");
@@ -906,10 +925,119 @@ public class ExtendedModulePanel extends JPanel {
             model.setRowCount(0);
             for (DanhSachNhac item : danhSachNhacService.findAll()) {
                 String hangMucName = item.getHangMuc() != null ? item.getHangMuc().getTenHM() : "N/A";
-                model.addRow(new Object[]{item.getMaBaiHat(), item.getTenBaiHat(), item.getCaSi(), item.getThoiLuong(), item.getFileNhac(), hangMucName});
+                model.addRow(new Object[]{
+                        item.getMaBaiHat(),
+                        item.getTenBaiHat(),
+                        item.getCaSi(),
+                        item.getThoiLuong(),
+                        getDisplayMusicFileName(item),
+                        hangMucName
+                });
             }
             loadHangMucOptions.run();
         };
+
+        chooseFile.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#111827;" +
+                        "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        downloadFile.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#374151;" +
+                        "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+        chooseFile.addActionListener(e -> {
+            // Mở File Explorer và chỉ cho chọn mp3/mp4 theo rule nghiệp vụ.
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Chọn file nhạc");
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(new FileNameExtensionFilter("Audio/Video (*.mp3, *.mp4)", "mp3", "mp4"));
+            String currentPath = fileNhac.getText().trim();
+            if (!currentPath.isEmpty()) {
+                File current = new File(currentPath);
+                if (current.exists()) {
+                    chooser.setSelectedFile(current);
+                }
+            }
+            int result = chooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile() != null) {
+                try {
+                    File selected = chooser.getSelectedFile();
+                    if (!isSupportedMediaFile(selected.getName())) {
+                        JOptionPane.showMessageDialog(this, "Chỉ hỗ trợ file .mp3 hoặc .mp4.");
+                        return;
+                    }
+
+                    selectedFileBytes[0] = Files.readAllBytes(selected.toPath());
+                    selectedFileName[0] = selected.getName();
+                    selectedMimeType[0] = selected.getName().toLowerCase().endsWith(".mp3")
+                            ? "audio/mpeg"
+                            : "video/mp4";
+                    fileNhac.setText(selectedFileName[0]);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Không thể đọc file đã chọn: " + ex.getMessage());
+                }
+            }
+        });
+
+        downloadFile.addActionListener(e -> {
+            if (selectedId[0] < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn bài hát cần tải file.");
+                return;
+            }
+
+            try {
+                DanhSachNhac item = danhSachNhacService.findById(selectedId[0]);
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát.");
+                    return;
+                }
+
+                byte[] data = item.getNoiDungFile();
+                if (data == null || data.length == 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Bản ghi này chưa lưu nội dung file trong cơ sở dữ liệu. Vui lòng chọn lại file và cập nhật.");
+                    return;
+                }
+
+                String defaultName = buildDownloadFileName(item);
+                JFileChooser saveChooser = new JFileChooser();
+                saveChooser.setDialogTitle("Chọn nơi lưu file nhạc");
+                saveChooser.setSelectedFile(new File(defaultName));
+                saveChooser.setFileFilter(new FileNameExtensionFilter("Audio/Video (*.mp3, *.mp4)", "mp3", "mp4"));
+                int result = saveChooser.showSaveDialog(this);
+                if (result != JFileChooser.APPROVE_OPTION || saveChooser.getSelectedFile() == null) {
+                    return;
+                }
+
+                File outFile = saveChooser.getSelectedFile();
+                if (!isSupportedMediaFile(outFile.getName())) {
+                    JOptionPane.showMessageDialog(this, "Tên file lưu phải có đuôi .mp3 hoặc .mp4.");
+                    return;
+                }
+
+                if (outFile.exists()) {
+                    int overwrite = JOptionPane.showConfirmDialog(
+                            this,
+                            "File đã tồn tại. Bạn có muốn ghi đè không?",
+                            "Xác nhận ghi đè",
+                            JOptionPane.YES_NO_OPTION
+                    );
+                    if (overwrite != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                }
+
+                Files.write(outFile.toPath(), data);
+                JOptionPane.showMessageDialog(this, "Tải file thành công: " + outFile.getAbsolutePath());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Tải file thất bại: " + extractRootMessage(ex));
+            }
+        });
 
         JButton add = new JButton("Thêm");
         styleAddButton(add);
@@ -926,24 +1054,29 @@ public class ExtendedModulePanel extends JPanel {
                     return;
                 }
 
-                HangMucKichBan hm = hangMucService.findById(hangMucItem.id);
-                if (hm == null) {
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy hạng mục");
+                // Chỉ cần giữ khóa ngoại MaHM để tránh kéo theo entity detached từ session khác.
+                HangMucKichBan hm = new HangMucKichBan();
+                hm.setMaHM(hangMucItem.id);
+                if (selectedFileBytes[0] == null || selectedFileBytes[0].length == 0) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn file nhạc .mp3 hoặc .mp4 để lưu.");
                     return;
                 }
                 DanhSachNhac item = new DanhSachNhac(
                         ten.getText().trim(),
                         caSi.getText().trim(),
                         duration,
-                        fileNhac.getText().trim(),
+                        selectedFileName[0],
                         hm
                 );
+                item.setTenFileGoc(selectedFileName[0]);
+                item.setLoaiFile(selectedMimeType[0]);
+                item.setNoiDungFile(selectedFileBytes[0]);
                 danhSachNhacService.save(item);
                 JOptionPane.showMessageDialog(this, "Thêm bài hát thành công.");
                 resetForm.run();
                 load.run();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Thêm bài hát thất bại: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "Thêm bài hát thất bại: " + extractRootMessage(ex));
             }
         });
 
@@ -985,22 +1118,29 @@ public class ExtendedModulePanel extends JPanel {
                     return;
                 }
 
-                HangMucKichBan hm = hangMucService.findById(hangMucItem.id);
-                if (item == null || hm == null) {
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát hoặc hạng mục.");
+                if (item == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát.");
                     return;
                 }
+                // Chỉ cần giữ khóa ngoại MaHM để tránh kéo theo entity detached từ session khác.
+                HangMucKichBan hm = new HangMucKichBan();
+                hm.setMaHM(hangMucItem.id);
                 item.setTenBaiHat(ten.getText().trim());
                 item.setCaSi(caSi.getText().trim());
                 item.setThoiLuong(duration);
-                item.setFileNhac(fileNhac.getText().trim());
+                if (selectedFileBytes[0] != null && selectedFileBytes[0].length > 0) {
+                    item.setFileNhac(selectedFileName[0]);
+                    item.setTenFileGoc(selectedFileName[0]);
+                    item.setLoaiFile(selectedMimeType[0]);
+                    item.setNoiDungFile(selectedFileBytes[0]);
+                }
                 item.setHangMuc(hm);
                 danhSachNhacService.update(item);
                 JOptionPane.showMessageDialog(this, "Cập nhật bài hát thành công.");
                 resetForm.run();
                 load.run();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Cập nhật bài hát thất bại: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "Cập nhật bài hát thất bại: " + extractRootMessage(ex));
             }
         });
 
@@ -1009,6 +1149,9 @@ public class ExtendedModulePanel extends JPanel {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
                     selectedId[0] = (int) model.getValueAt(row, 0);
+                    selectedFileBytes[0] = null;
+                    selectedFileName[0] = "";
+                    selectedMimeType[0] = "";
                     ten.setText(String.valueOf(model.getValueAt(row, 1)));
                     caSi.setText(String.valueOf(model.getValueAt(row, 2)));
                     thoiLuong.setText(String.valueOf(model.getValueAt(row, 3)));
@@ -1032,7 +1175,7 @@ public class ExtendedModulePanel extends JPanel {
 
         return wrapCrud(table, load,
                 new String[]{"Tên bài hát", "Ca sĩ", "Thời lượng (phút)", "File nhạc", "Hạng mục"},
-                new JComponent[]{ten, caSi, thoiLuong, fileNhac, cbHangMuc}, add, delete, update, reset);
+                new JComponent[]{ten, caSi, thoiLuong, fileNhacPanel, cbHangMuc}, add, delete, update, downloadFile, reset);
     }
 
     private JComponent createLichTongDuyetTab() {
@@ -1450,6 +1593,35 @@ public class ExtendedModulePanel extends JPanel {
             }
         }
         return false;
+    }
+
+    private String getDisplayMusicFileName(DanhSachNhac item) {
+        if (item.getTenFileGoc() != null && !item.getTenFileGoc().trim().isEmpty()) {
+            return item.getTenFileGoc();
+        }
+        return item.getFileNhac();
+    }
+
+    private String buildDownloadFileName(DanhSachNhac item) {
+        String name = getDisplayMusicFileName(item);
+        if (name == null || name.trim().isEmpty()) {
+            return "baihat-" + item.getMaBaiHat() + ".mp3";
+        }
+        return name;
+    }
+
+    private boolean isSupportedMediaFile(String fileName) {
+        String normalized = fileName == null ? "" : fileName.toLowerCase();
+        return normalized.endsWith(".mp3") || normalized.endsWith(".mp4");
+    }
+
+    private String extractRootMessage(Throwable throwable) {
+        Throwable root = throwable;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String message = root.getMessage();
+        return (message == null || message.trim().isEmpty()) ? throwable.toString() : message;
     }
 
     private static class IdNameItem {

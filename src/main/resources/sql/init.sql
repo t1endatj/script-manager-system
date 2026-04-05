@@ -88,6 +88,9 @@ CREATE TABLE DanhSachNhac (
       CaSi VARCHAR(100),
       ThoiLuong INT,
       FileNhac VARCHAR(255),
+      TenFileGoc VARCHAR(255),
+      LoaiFile VARCHAR(100),
+      NoiDungFile LONGBLOB,
       MaHM INT NOT NULL,
       CONSTRAINT FK_NHAC_HM FOREIGN KEY (MaHM)
             REFERENCES HangMucKichBan(MaHM)
