@@ -33,6 +33,18 @@ public class DanhSachNhac {
     @Column(name = "FileNhac", length = 255)
     private String fileNhac;
 
+    @Size(max = 255)
+    @Column(name = "TenFileGoc", length = 255)
+    private String tenFileGoc;
+
+    @Size(max = 100)
+    @Column(name = "LoaiFile", length = 100)
+    private String loaiFile;
+
+    @Lob
+    @Column(name = "NoiDungFile", columnDefinition = "LONGBLOB")
+    private byte[] noiDungFile;
+
     //Quan hệ 1-n với HangMucKichBan
     @NotNull
     @ManyToOne
@@ -86,6 +98,30 @@ public class DanhSachNhac {
 
     public void setFileNhac(String fileNhac) {
         this.fileNhac = fileNhac;
+    }
+
+    public String getTenFileGoc() {
+        return tenFileGoc;
+    }
+
+    public void setTenFileGoc(String tenFileGoc) {
+        this.tenFileGoc = tenFileGoc;
+    }
+
+    public String getLoaiFile() {
+        return loaiFile;
+    }
+
+    public void setLoaiFile(String loaiFile) {
+        this.loaiFile = loaiFile;
+    }
+
+    public byte[] getNoiDungFile() {
+        return noiDungFile;
+    }
+
+    public void setNoiDungFile(byte[] noiDungFile) {
+        this.noiDungFile = noiDungFile;
     }
 
     public HangMucKichBan getHangMuc() {
