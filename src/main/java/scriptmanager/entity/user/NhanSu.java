@@ -30,11 +30,13 @@ public class NhanSu {
     @Column(name = "VaiTro", length = 50)
     private String vaiTro;
 
-    //Quan hệ 1-n với PhanCongNhanSu
+    @Lob
+    @Column(name = "AnhDaiDien", columnDefinition = "LONGBLOB")
+    private byte[] anhDaiDien;
+
     @OneToMany(mappedBy = "nhanSu", cascade = CascadeType.ALL)
     private Set<PhanCongNhanSu> phanCongNhanSus = new HashSet<>();
 
-    //Constructor
     public NhanSu() {
     }
 
@@ -44,18 +46,15 @@ public class NhanSu {
         this.vaiTro = vaiTro;
     }
 
-    //helper method PhanCongNhanSu
     public void addPhanCongNhanSu(PhanCongNhanSu pc) {
         phanCongNhanSus.add(pc);
         pc.setNhanSu(this);
     }
 
     public void removePhanCongNhanSu(PhanCongNhanSu pc) {
-            phanCongNhanSus.remove(pc);
-            pc.setNhanSu(null);
+        phanCongNhanSus.remove(pc);
+        pc.setNhanSu(null);
     }
-
-    //Getter và setter
 
     public int getMaNS() {
         return maNS;
@@ -87,6 +86,14 @@ public class NhanSu {
 
     public void setVaiTro(String vaiTro) {
         this.vaiTro = vaiTro;
+    }
+
+    public byte[] getAnhDaiDien() {
+        return anhDaiDien;
+    }
+
+    public void setAnhDaiDien(byte[] anhDaiDien) {
+        this.anhDaiDien = anhDaiDien;
     }
 
     public Set<PhanCongNhanSu> getPhanCongNhanSus() {

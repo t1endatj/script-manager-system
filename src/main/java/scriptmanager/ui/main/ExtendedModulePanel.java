@@ -194,18 +194,57 @@ public class ExtendedModulePanel extends JPanel {
     }
 
     private JComponent createNhanSuTab() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã NS", "Tên nhân sự", "SĐT", "Vai trò"}, 0);
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã NS", "Tên nhân sự", "SĐT", "Vai trò", "Có ảnh"}, 0);
         JTable table = new JTable(model);
         JTextField ten = new JTextField();
         JTextField sdt = new JTextField();
         JTextField vaiTro = new JTextField();
+
+        JLabel lblImagePreview = new JLabel("Chưa có ảnh", SwingConstants.CENTER);
+        lblImagePreview.setPreferredSize(new Dimension(60, 60));
+        lblImagePreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+
+        JButton btnChooseImage = new JButton("Chọn ảnh");
+        btnChooseImage.putClientProperty(FlatClientProperties.STYLE,
+                "arc:10;" +
+                        "background:#111827;" +
+                        "foreground:#FFFFFF;" +
+                        "focusWidth:0;" +
+                        "borderWidth:0");
+
+        JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        imagePanel.setOpaque(false);
+        imagePanel.add(lblImagePreview);
+        imagePanel.add(btnChooseImage);
+
+        final byte[][] selectedImageBytes = {null};
         final int[] selectedId = {-1};
+
+        btnChooseImage.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("Hình ảnh (JPG, PNG)", "jpg", "jpeg", "png"));
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    File file = chooser.getSelectedFile();
+                    selectedImageBytes[0] = Files.readAllBytes(file.toPath());
+                    ImageIcon icon = new ImageIcon(selectedImageBytes[0]);
+                    Image img = icon.getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+                    lblImagePreview.setIcon(new ImageIcon(img));
+                    lblImagePreview.setText("");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Không thể đọc file ảnh: " + ex.getMessage());
+                }
+            }
+        });
 
         Runnable resetForm = () -> {
             selectedId[0] = -1;
             ten.setText("");
             sdt.setText("");
             vaiTro.setText("");
+            selectedImageBytes[0] = null;
+            lblImagePreview.setIcon(null);
+            lblImagePreview.setText("Chưa có ảnh");
             table.clearSelection();
             ten.requestFocusInWindow();
         };
@@ -213,7 +252,8 @@ public class ExtendedModulePanel extends JPanel {
         Runnable load = () -> {
             model.setRowCount(0);
             for (NhanSu item : nhanSuService.findAll()) {
-                model.addRow(new Object[]{item.getMaNS(), item.getTenNS(), item.getSdt(), item.getVaiTro()});
+                String coAnh = (item.getAnhDaiDien() != null && item.getAnhDaiDien().length > 0) ? "Có" : "Không";
+                model.addRow(new Object[]{item.getMaNS(), item.getTenNS(), item.getSdt(), item.getVaiTro(), coAnh});
             }
         };
 
@@ -221,7 +261,9 @@ public class ExtendedModulePanel extends JPanel {
         styleAddButton(add);
         add.addActionListener(e -> {
             try {
-                nhanSuService.save(new NhanSu(ten.getText().trim(), sdt.getText().trim(), vaiTro.getText().trim()));
+                NhanSu ns = new NhanSu(ten.getText().trim(), sdt.getText().trim(), vaiTro.getText().trim());
+                ns.setAnhDaiDien(selectedImageBytes[0]);
+                nhanSuService.save(ns);
                 resetForm.run();
                 load.run();
             } catch (Exception ex) {
@@ -263,6 +305,7 @@ public class ExtendedModulePanel extends JPanel {
                 item.setTenNS(ten.getText().trim());
                 item.setSdt(sdt.getText().trim());
                 item.setVaiTro(vaiTro.getText().trim());
+                item.setAnhDaiDien(selectedImageBytes[0]);
                 nhanSuService.update(item);
                 resetForm.run();
                 load.run();
@@ -291,11 +334,26 @@ public class ExtendedModulePanel extends JPanel {
                     ten.setText(String.valueOf(model.getValueAt(row, 1)));
                     sdt.setText(String.valueOf(model.getValueAt(row, 2)));
                     vaiTro.setText(String.valueOf(model.getValueAt(row, 3)));
+
+                    NhanSu ns = nhanSuService.findById(selectedId[0]);
+                    if (ns != null && ns.getAnhDaiDien() != null && ns.getAnhDaiDien().length > 0) {
+                        selectedImageBytes[0] = ns.getAnhDaiDien();
+                        ImageIcon icon = new ImageIcon(selectedImageBytes[0]);
+                        Image img = icon.getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+                        lblImagePreview.setIcon(new ImageIcon(img));
+                        lblImagePreview.setText("");
+                    } else {
+                        selectedImageBytes[0] = null;
+                        lblImagePreview.setIcon(null);
+                        lblImagePreview.setText("Chưa có ảnh");
+                    }
                 }
             }
         });
 
-        return wrapCrud(table, load, new String[]{"Tên nhân sự", "SĐT", "Vai trò"}, new JComponent[]{ten, sdt, vaiTro}, add, delete, update, reset);
+        return wrapCrud(table, load,
+                new String[]{"Tên nhân sự", "SĐT", "Vai trò", "Ảnh đại diện"},
+                new JComponent[]{ten, sdt, vaiTro, imagePanel}, add, delete, update, reset);
     }
 
     private JComponent createPhanCongNhanSuTheoSuKienTab() {
@@ -337,7 +395,6 @@ public class ExtendedModulePanel extends JPanel {
                 cbNhanSu.setSelectedIndex(0);
             }
         };
-
 
         cbSuKien.addActionListener(e -> loadHangMucByEvent.run());
 
@@ -513,7 +570,6 @@ public class ExtendedModulePanel extends JPanel {
                 new String[]{"Sự kiện", "Hạng mục thuộc sự kiện", "Nhân sự", "Nhiệm vụ"},
                 new JComponent[]{cbSuKien, cbHangMuc, cbNhanSu, nhiemVu}, assign, delete, update, reset);
 
-        // Khi quay lại tab phân công, nạp lại combo để thấy nhân sự/hạng mục mới thêm.
         panel.addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && panel.isShowing()) {
                 load.run();
@@ -950,7 +1006,6 @@ public class ExtendedModulePanel extends JPanel {
                         "focusWidth:0;" +
                         "borderWidth:0");
         chooseFile.addActionListener(e -> {
-            // Mở File Explorer và chỉ cho chọn mp3/mp4 theo rule nghiệp vụ.
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle("Chọn file nhạc");
             chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -1054,7 +1109,6 @@ public class ExtendedModulePanel extends JPanel {
                     return;
                 }
 
-                // Chỉ cần giữ khóa ngoại MaHM để tránh kéo theo entity detached từ session khác.
                 HangMucKichBan hm = new HangMucKichBan();
                 hm.setMaHM(hangMucItem.id);
                 if (selectedFileBytes[0] == null || selectedFileBytes[0].length == 0) {
@@ -1122,7 +1176,6 @@ public class ExtendedModulePanel extends JPanel {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy bài hát.");
                     return;
                 }
-                // Chỉ cần giữ khóa ngoại MaHM để tránh kéo theo entity detached từ session khác.
                 HangMucKichBan hm = new HangMucKichBan();
                 hm.setMaHM(hangMucItem.id);
                 item.setTenBaiHat(ten.getText().trim());
@@ -1666,4 +1719,3 @@ public class ExtendedModulePanel extends JPanel {
                         "borderWidth:0");
     }
 }
-
